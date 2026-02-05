@@ -212,6 +212,7 @@ class CloudflareScanner:
             "-f", str(ip_file),
             "-o", str(result_file),
             "-n", str(config['threads']),
+            "-url", str(config['url']),
             "-t", str(config['ping_times']),
             "-dn", str(config['test_count']),
             "-dt", str(config['download_timeout']),

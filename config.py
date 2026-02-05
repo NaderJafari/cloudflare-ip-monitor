@@ -34,6 +34,7 @@ INITIAL_SCAN_CONFIG = {
     "ping_times": 4,             # Ping count per IP
     "download_timeout": 15,      # Seconds per download test
     "port": 443,                 # Test port
+    "url": "https://speed.cloudflare.com/__down?bytes=52428800",                 # Test port
 }
 
 # Periodic monitoring parameters (Step 2: Re-test selected IPs)
