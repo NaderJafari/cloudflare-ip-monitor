@@ -44,6 +44,8 @@ MONITOR_CONFIG = {
     "ping_times": 4,             # Ping count per IP
     "threads": 100,              # Concurrent threads for periodic tests
     "max_ips_per_cycle": 20,     # Max IPs to test per cycle
+    "port": 443,                 # Test port
+    "url": "https://speed.cloudflare.com/__down?bytes=52428800",
 }
 
 # Dashboard configuration (Step 3: Web interface)

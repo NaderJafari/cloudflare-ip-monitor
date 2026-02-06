@@ -335,6 +335,7 @@ class CloudflareScanner:
             "-dn", str(len(ip_addresses)),  # Test all
             "-dt", str(config['download_timeout']),
             "-url", str(config['url']),
+            "-tp", str(config['port']),
             "-allip",  # Test all IPs, not random sample
             "-p", "0",
         ]
