@@ -1,1 +1,15 @@
 .idea
+.env
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.db
+data/
+logs/
+scanner/
+*.txt
+!requirements.txt
