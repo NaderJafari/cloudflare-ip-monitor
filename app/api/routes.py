@@ -62,6 +62,7 @@ def get_stats():
         "top_ips": [ip.to_dict() for ip in top_ips],
         "recent_scans": [s.to_dict() for s in recent_scans],
         "monitor": current_app.monitor.get_status(),
+        "scanner": current_app.scanner.get_scan_status(),
     }
     return jsonify(stats)
 
@@ -162,6 +163,10 @@ def monitor_status():
 
 @api_bp.route("/scan/initial", methods=["POST"])
 def start_initial_scan():
+    scanner = current_app.scanner
+    if scanner._is_scanning:
+        return jsonify({"status": "rejected", "reason": "scan already running"}), 409
+
     data = request.get_json(silent=True) or {}
     app = current_app._get_current_object()
 
@@ -176,6 +181,47 @@ def start_initial_scan():
 
     threading.Thread(target=run_scan, daemon=True).start()
     return jsonify({"status": "started", "message": "Initial scan started in background"})
+
+
+@api_bp.route("/scan/stop", methods=["POST"])
+def stop_scan():
+    cancelled = current_app.scanner.cancel_scan()
+    if cancelled:
+        return jsonify({"status": "cancelling"})
+    return jsonify({"status": "no_scan_running"})
+
+
+@api_bp.route("/scan/status")
+def scan_status():
+    return jsonify(current_app.scanner.get_scan_status())
+
+
+@api_bp.route("/scan/schedule/start", methods=["POST"])
+def start_scan_schedule():
+    data = request.get_json(silent=True) or {}
+    interval = data.get("interval", 3600)
+    current_app.scanner.start_schedule(interval=interval)
+    return jsonify({
+        "status": "started",
+        "interval": current_app.scanner._schedule_interval,
+    })
+
+
+@api_bp.route("/scan/schedule/stop", methods=["POST"])
+def stop_scan_schedule():
+    current_app.scanner.stop_schedule()
+    return jsonify({"status": "stopped"})
+
+
+@api_bp.route("/scan/schedule/interval", methods=["POST"])
+def set_scan_schedule_interval():
+    data = request.get_json(silent=True) or {}
+    interval = data.get("interval", 3600)
+    current_app.scanner.set_schedule_interval(interval)
+    return jsonify({
+        "status": "updated",
+        "interval": current_app.scanner._schedule_interval,
+    })
 
 
 @api_bp.route("/scan/test", methods=["POST"])

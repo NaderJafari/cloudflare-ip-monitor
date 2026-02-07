@@ -59,6 +59,7 @@ class Config:
             "SCAN_URL",
             "https://speed.cloudflare.com/__down?bytes=52428800",
         ),
+        "schedule_interval": _env("SCAN_SCHEDULE_INTERVAL", 0, int),
     }
 
     # Monitor parameters
