@@ -1,29 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Cloudflare IP Monitor - Dashboard
-Pure Python web interface for monitoring Cloudflare IPs
-No external dependencies required - uses only Python standard library
-"""
-
-import http.server
-import socketserver
-import json
-import urllib.parse
-import threading
-import logging
-from typing import Dict, Any
-
-from config import DASHBOARD_CONFIG
-from database import db
-from monitor import monitor, start_monitoring, stop_monitoring, get_monitor_status
-from scanner import run_initial_scan
-
-logger = logging.getLogger(__name__)
-
-
-# HTML Template stored as constant
-DASHBOARD_HTML = '''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
@@ -52,14 +27,14 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-secondary); }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-        
+
         .header { background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); border-bottom: 1px solid var(--border-color); padding: 1.5rem 2rem; position: sticky; top: 0; z-index: 100; }
         .header-content { max-width: 1600px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
         .logo { display: flex; align-items: center; gap: 0.75rem; }
         .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
         .logo-text { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-primary), var(--text-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        
+
         .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit; }
         .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: var(--bg-primary); }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3); }
@@ -67,7 +42,7 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
         .btn-secondary:hover { background: var(--border-color); }
         .btn-danger { background: var(--accent-danger); color: white; }
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
-        
+
         .main { max-width: 1600px; margin: 0 auto; padding: 2rem; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
         .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; transition: all 0.3s ease; }
@@ -75,18 +50,18 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
         .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
         .stat-value { font-size: 1.75rem; font-weight: 700; font-family: var(--font-mono); color: var(--accent-primary); }
         .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
-        
+
         .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; }
         .panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-secondary); }
         .panel-title { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
         .panel-body { padding: 1.5rem; }
-        
+
         .search-box { display: flex; gap: 0.75rem; flex-wrap: wrap; }
         .search-input { padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 0.875rem; width: 200px; font-family: inherit; }
         .search-input:focus { outline: none; border-color: var(--accent-primary); }
         .search-input::placeholder { color: var(--text-muted); }
         select.search-input { cursor: pointer; width: auto; }
-        
+
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
         th, td { padding: 0.875rem 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
@@ -99,14 +74,14 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
         .speed-good { color: var(--accent-primary); }
         .speed-medium { color: var(--accent-warning); }
         .speed-bad { color: var(--accent-danger); }
-        
+
         .monitor-status { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
         .status-indicator { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--bg-tertiary); border-radius: 8px; font-size: 0.875rem; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; animation: pulse 2s infinite; }
         .status-dot.running { background: var(--accent-primary); }
         .status-dot.stopped { background: var(--accent-danger); animation: none; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        
+
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 90%; max-width: 800px; max-height: 80vh; overflow: hidden; transform: scale(0.9); transition: transform 0.3s ease; }
@@ -116,29 +91,29 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
         .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; line-height: 1; }
         .modal-close:hover { color: var(--accent-danger); }
         .modal-body { padding: 1.5rem; max-height: 60vh; overflow-y: auto; }
-        
+
         .chart-container { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; margin-top: 1rem; }
         .chart-bar { flex: 1; background: linear-gradient(to top, var(--accent-primary), var(--accent-secondary)); border-radius: 4px 4px 0 0; min-height: 4px; transition: all 0.3s ease; }
         .chart-bar:hover { opacity: 0.8; }
-        
+
         .ip-details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
         .detail-item { background: var(--bg-secondary); padding: 1rem; border-radius: 8px; }
         .detail-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
         .detail-value { font-size: 1.25rem; font-weight: 600; font-family: var(--font-mono); }
-        
+
         .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
         .spinner { width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
+
         .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 2000; }
         .toast { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.25rem; margin-top: 0.5rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease; min-width: 250px; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
         .toast.success { border-left: 3px solid var(--accent-primary); }
         .toast.error { border-left: 3px solid var(--accent-danger); }
-        
+
         .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
         .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
-        
+
         @media (max-width: 768px) {
             .header { padding: 1rem; }
             .main { padding: 1rem; }
@@ -155,17 +130,17 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon">☁️</div>
+                <div class="logo-icon">&#9729;</div>
                 <span class="logo-text">CF IP Monitor</span>
             </div>
             <div class="header-actions">
-                <button class="btn btn-secondary" onclick="refreshData()">🔄 Refresh</button>
-                <button class="btn btn-secondary" onclick="testNow()">⚡ Test Now</button>
-                <button class="btn btn-primary" onclick="showScanModal()">🔍 Initial Scan</button>
+                <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
+                <button class="btn btn-secondary" onclick="testNow()">Test Now</button>
+                <button class="btn btn-primary" onclick="showScanModal()">Initial Scan</button>
             </div>
         </div>
     </header>
-    
+
     <main class="main">
         <div class="stats-grid" id="stats-grid">
             <div class="stat-card"><div class="stat-label">Active IPs</div><div class="stat-value" id="stat-active-ips">-</div></div>
@@ -175,10 +150,10 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
             <div class="stat-card"><div class="stat-label">Avg Latency</div><div class="stat-value" id="stat-avg-latency">-</div><div class="stat-sub">ms</div></div>
             <div class="stat-card"><div class="stat-label">Best Latency</div><div class="stat-value" id="stat-best-latency">-</div><div class="stat-sub">ms</div></div>
         </div>
-        
+
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">📡 Monitor Status</div>
+                <div class="panel-title">Monitor Status</div>
                 <div class="monitor-status">
                     <div class="status-indicator">
                         <div class="status-dot" id="monitor-dot"></div>
@@ -198,15 +173,15 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
                 </div>
             </div>
         </div>
-        
+
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">🌐 IP Addresses</div>
+                <div class="panel-title">IP Addresses</div>
                 <div class="search-box">
                     <input type="text" class="search-input" id="search-input" placeholder="Search IP..." oninput="filterIPs()">
                     <select class="search-input" id="sort-select" onchange="sortIPs()">
-                        <option value="avg_download_speed">Sort: Speed ↓</option>
-                        <option value="avg_latency">Sort: Latency ↑</option>
+                        <option value="avg_download_speed">Sort: Speed</option>
+                        <option value="avg_latency">Sort: Latency</option>
                         <option value="avg_loss_rate">Sort: Loss Rate</option>
                         <option value="total_tests">Sort: Tests</option>
                         <option value="last_tested">Sort: Last Tested</option>
@@ -236,17 +211,17 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
                 </div>
             </div>
         </div>
-        
+
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">📊 Hourly Statistics (Last 24h)</div>
+                <div class="panel-title">Hourly Statistics (Last 24h)</div>
             </div>
             <div class="panel-body">
                 <div id="hourly-chart" class="chart-container"><div class="loading">Loading chart...</div></div>
             </div>
         </div>
     </main>
-    
+
     <div class="modal-overlay" id="ip-modal">
         <div class="modal">
             <div class="modal-header">
@@ -256,11 +231,11 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
             <div class="modal-body" id="modal-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
         </div>
     </div>
-    
+
     <div class="modal-overlay" id="scan-modal">
         <div class="modal">
             <div class="modal-header">
-                <div class="modal-title">🔍 Initial Scan Configuration</div>
+                <div class="modal-title">Initial Scan Configuration</div>
                 <button class="modal-close" onclick="closeScanModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -271,27 +246,29 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
                     <div class="detail-item"><div class="detail-label">IPs to Test</div><input type="number" class="search-input" id="scan-test-count" value="50" style="width: 100%;"></div>
                 </div>
                 <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">This will scan all Cloudflare IP ranges and find IPs matching your criteria. The scan may take several minutes.</p>
-                <button class="btn btn-primary" onclick="startInitialScan()" style="width: 100%;">🚀 Start Scan</button>
+                <button class="btn btn-primary" onclick="startInitialScan()" style="width: 100%;">Start Scan</button>
             </div>
         </div>
     </div>
-    
+
     <div class="toast-container" id="toast-container"></div>
-    
+
     <script>
         let currentSort = 'avg_download_speed';
         let sortDir = 'DESC';
-        
-        function showToast(message, type = 'success') {
+
+        function showToast(message, type) {
+            type = type || 'success';
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast ' + type;
             toast.innerHTML = message;
             container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+            setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 3000);
         }
-        
-        async function fetchAPI(url, options = {}) {
+
+        async function fetchAPI(url, options) {
+            options = options || {};
             try {
                 const response = await fetch(url, options);
                 return await response.json();
@@ -301,7 +278,7 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
                 return null;
             }
         }
-        
+
         async function loadStats() {
             const data = await fetchAPI('/api/stats');
             if (!data) return;
@@ -313,14 +290,14 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
             document.getElementById('stat-best-latency').textContent = (data.best_latency || 0).toFixed(0);
             if (data.monitor) updateMonitorStatus(data.monitor);
         }
-        
+
         function updateMonitorStatus(status) {
             const dot = document.getElementById('monitor-dot');
             const text = document.getElementById('monitor-status-text');
             const btn = document.getElementById('monitor-toggle-btn');
             const interval = document.getElementById('monitor-interval');
             const next = document.getElementById('monitor-next');
-            
+
             if (status.is_running) {
                 dot.className = 'status-dot running';
                 text.textContent = 'Running';
@@ -337,7 +314,7 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
                 next.textContent = '';
             }
         }
-        
+
         async function loadIPs() {
             const search = document.getElementById('search-input').value;
             const url = '/api/ips?sort=' + currentSort + '&dir=' + sortDir + (search ? '&search=' + encodeURIComponent(search) : '');
@@ -345,73 +322,77 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
             if (!data) return;
             renderIPTable(data.ips || []);
         }
-        
+
         function renderIPTable(ips) {
             const tbody = document.getElementById('ip-table-body');
             if (ips.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="empty-state-icon">📭</div><div>No IPs found. Run an initial scan.</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="empty-state-icon">No Data</div><div>No IPs found. Run an initial scan.</div></td></tr>';
                 return;
             }
-            tbody.innerHTML = ips.map(ip => {
+            tbody.innerHTML = ips.map(function(ip) {
                 const speedClass = ip.avg_download_speed >= 15 ? 'speed-good' : (ip.avg_download_speed >= 8 ? 'speed-medium' : 'speed-bad');
                 const lossClass = ip.avg_loss_rate <= 0.1 ? 'speed-good' : (ip.avg_loss_rate <= 0.25 ? 'speed-medium' : 'speed-bad');
                 const lastTested = ip.last_tested ? new Date(ip.last_tested).toLocaleString() : 'Never';
                 return '<tr>' +
-                    '<td class="ip-cell" onclick="showIPDetails(\\''+ip.ip_address+'\\')">' + ip.ip_address + '</td>' +
-                    '<td class="'+speedClass+'">' + (ip.avg_download_speed || 0).toFixed(2) + '</td>' +
-                    '<td class="'+speedClass+'">' + (ip.best_download_speed || 0).toFixed(2) + '</td>' +
+                    '<td class="ip-cell" onclick="showIPDetails(\'' + ip.ip_address + '\')">' + ip.ip_address + '</td>' +
+                    '<td class="' + speedClass + '">' + (ip.avg_download_speed || 0).toFixed(2) + '</td>' +
+                    '<td class="' + speedClass + '">' + (ip.best_download_speed || 0).toFixed(2) + '</td>' +
                     '<td>' + (ip.avg_latency || 0).toFixed(0) + '</td>' +
                     '<td>' + (ip.best_latency || 0).toFixed(0) + '</td>' +
-                    '<td class="'+lossClass+'">' + ((ip.avg_loss_rate || 0) * 100).toFixed(1) + '%</td>' +
+                    '<td class="' + lossClass + '">' + ((ip.avg_loss_rate || 0) * 100).toFixed(1) + '%</td>' +
                     '<td>' + (ip.total_tests || 0) + '</td>' +
                     '<td style="font-size: 0.7rem;">' + lastTested + '</td>' +
-                    '<td><button class="btn btn-sm btn-danger" onclick="deactivateIP(\\''+ip.ip_address+'\\')">✕</button></td>' +
+                    '<td><button class="btn btn-sm btn-danger" onclick="deactivateIP(\'' + ip.ip_address + '\')">X</button></td>' +
                     '</tr>';
             }).join('');
         }
-        
+
         async function loadHourlyChart() {
             const data = await fetchAPI('/api/hourly?hours=24');
             if (!data || !data.stats || data.stats.length === 0) {
                 document.getElementById('hourly-chart').innerHTML = '<div class="empty-state">No data available</div>';
                 return;
             }
-            const maxSpeed = Math.max(...data.stats.map(s => s.avg_speed || 0));
+            const maxSpeed = Math.max.apply(null, data.stats.map(function(s) { return s.avg_speed || 0; }));
             const container = document.getElementById('hourly-chart');
-            container.innerHTML = data.stats.map(stat => {
+            container.innerHTML = data.stats.map(function(stat) {
                 const height = maxSpeed > 0 ? ((stat.avg_speed || 0) / maxSpeed * 100) : 0;
-                return '<div class="chart-bar" style="height: '+height+'%;" title="'+(stat.avg_speed || 0).toFixed(1)+' MB/s"></div>';
+                return '<div class="chart-bar" style="height: ' + height + '%;" title="' + (stat.avg_speed || 0).toFixed(1) + ' MB/s"></div>';
             }).join('');
         }
-        
+
         async function showIPDetails(ip) {
             document.getElementById('ip-modal').classList.add('active');
             document.getElementById('modal-ip-title').textContent = 'IP: ' + ip;
             document.getElementById('modal-body').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
-            const [details, history] = await Promise.all([
+            const results = await Promise.all([
                 fetchAPI('/api/ip?ip=' + encodeURIComponent(ip)),
                 fetchAPI('/api/history?ip=' + encodeURIComponent(ip) + '&hours=24')
             ]);
+            const details = results[0];
+            const history = results[1];
             if (!details) { document.getElementById('modal-body').innerHTML = '<div class="empty-state">Failed to load</div>'; return; }
             let html = '<div class="ip-details-grid">' +
-                '<div class="detail-item"><div class="detail-label">Avg Speed</div><div class="detail-value">'+(details.avg_download_speed || 0).toFixed(2)+' MB/s</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Best Speed</div><div class="detail-value">'+(details.best_download_speed || 0).toFixed(2)+' MB/s</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Avg Latency</div><div class="detail-value">'+(details.avg_latency || 0).toFixed(0)+' ms</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Best Latency</div><div class="detail-value">'+(details.best_latency || 0).toFixed(0)+' ms</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Avg Loss</div><div class="detail-value">'+((details.avg_loss_rate || 0) * 100).toFixed(1)+'%</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Total Tests</div><div class="detail-value">'+(details.total_tests || 0)+'</div></div></div>';
+                '<div class="detail-item"><div class="detail-label">Avg Speed</div><div class="detail-value">' + (details.avg_download_speed || 0).toFixed(2) + ' MB/s</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Best Speed</div><div class="detail-value">' + (details.best_download_speed || 0).toFixed(2) + ' MB/s</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Avg Latency</div><div class="detail-value">' + (details.avg_latency || 0).toFixed(0) + ' ms</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Best Latency</div><div class="detail-value">' + (details.best_latency || 0).toFixed(0) + ' ms</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Avg Loss</div><div class="detail-value">' + ((details.avg_loss_rate || 0) * 100).toFixed(1) + '%</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Total Tests</div><div class="detail-value">' + (details.total_tests || 0) + '</div></div></div>';
             if (history && history.history && history.history.length > 0) {
                 html += '<h4 style="margin: 1rem 0 0.5rem;">Recent History (24h)</h4><div class="table-container"><table><thead><tr><th>Time</th><th>Speed</th><th>Latency</th><th>Loss</th></tr></thead><tbody>';
-                html += history.history.slice(0, 20).map(h => '<tr><td style="font-size: 0.75rem;">'+new Date(h.test_time).toLocaleString()+'</td><td>'+(h.download_speed_mbps || 0).toFixed(2)+'</td><td>'+(h.latency_ms || 0).toFixed(0)+'</td><td>'+((h.loss_rate || 0) * 100).toFixed(1)+'%</td></tr>').join('');
+                html += history.history.slice(0, 20).map(function(h) {
+                    return '<tr><td style="font-size: 0.75rem;">' + new Date(h.test_time).toLocaleString() + '</td><td>' + (h.download_speed_mbps || 0).toFixed(2) + '</td><td>' + (h.latency_ms || 0).toFixed(0) + '</td><td>' + ((h.loss_rate || 0) * 100).toFixed(1) + '%</td></tr>';
+                }).join('');
                 html += '</tbody></table></div>';
             }
             document.getElementById('modal-body').innerHTML = html;
         }
-        
+
         function closeModal() { document.getElementById('ip-modal').classList.remove('active'); }
         function showScanModal() { document.getElementById('scan-modal').classList.add('active'); }
         function closeScanModal() { document.getElementById('scan-modal').classList.remove('active'); }
-        
+
         async function startInitialScan() {
             const data = {
                 min_speed: parseFloat(document.getElementById('scan-min-speed').value),
@@ -422,12 +403,12 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
             const result = await fetchAPI('/api/scan/initial', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
             if (result) { showToast('Initial scan started! This may take several minutes.', 'success'); closeScanModal(); }
         }
-        
+
         async function testNow() {
             const result = await fetchAPI('/api/scan/test', { method: 'POST' });
             if (result) { showToast('Test started!', 'success'); setTimeout(refreshData, 5000); }
         }
-        
+
         async function toggleMonitor() {
             const status = await fetchAPI('/api/monitor/status');
             const endpoint = status && status.is_running ? '/api/monitor/stop' : '/api/monitor/start';
@@ -435,246 +416,31 @@ DASHBOARD_HTML = '''<!DOCTYPE html>
             const result = await fetchAPI(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({interval: interval}) });
             if (result) { showToast('Monitor ' + (result.status === 'started' ? 'started' : 'stopped'), 'success'); loadStats(); }
         }
-        
+
         async function setMonitorInterval(seconds) {
             await fetchAPI('/api/monitor/interval', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({interval: parseInt(seconds)}) });
             loadStats();
         }
-        
+
         async function deactivateIP(ip) {
             if (!confirm('Deactivate IP ' + ip + '?')) return;
             const result = await fetchAPI('/api/ip/deactivate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ip: ip}) });
             if (result) { showToast('IP deactivated', 'success'); loadIPs(); loadStats(); }
         }
-        
+
         function filterIPs() { loadIPs(); }
         function sortIPs() {
             currentSort = document.getElementById('sort-select').value;
             sortDir = (currentSort === 'avg_latency' || currentSort === 'avg_loss_rate') ? 'ASC' : 'DESC';
             loadIPs();
         }
-        
+
         function refreshData() { loadStats(); loadIPs(); loadHourlyChart(); }
-        setInterval(() => loadStats(), 30000);
-        setInterval(() => { loadIPs(); loadHourlyChart(); }, 120000);
-        document.addEventListener('DOMContentLoaded', () => refreshData());
-        document.querySelectorAll('.modal-overlay').forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); }); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); if (e.key === 'r' && document.activeElement.tagName !== 'INPUT') refreshData(); });
+        setInterval(function() { loadStats(); }, 30000);
+        setInterval(function() { loadIPs(); loadHourlyChart(); }, 120000);
+        document.addEventListener('DOMContentLoaded', function() { refreshData(); });
+        document.querySelectorAll('.modal-overlay').forEach(function(modal) { modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); }); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(function(m) { m.classList.remove('active'); }); if (e.key === 'r' && document.activeElement.tagName !== 'INPUT') refreshData(); });
     </script>
 </body>
-</html>'''
-
-
-class DashboardHandler(http.server.BaseHTTPRequestHandler):
-    """HTTP request handler for the dashboard"""
-    
-    def log_message(self, format, *args):
-        logger.debug(f"{self.address_string()} - {format % args}")
-    
-    def _send_response(self, status: int, content_type: str, body: bytes):
-        self.send_response(status)
-        self.send_header('Content-Type', content_type)
-        self.send_header('Content-Length', len(body))
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.end_headers()
-        self.wfile.write(body)
-    
-    def _send_json(self, data: Any, status: int = 200):
-        body = json.dumps(data, default=str, ensure_ascii=False).encode('utf-8')
-        self._send_response(status, 'application/json; charset=utf-8', body)
-    
-    def _send_html(self, html: str, status: int = 200):
-        self._send_response(status, 'text/html; charset=utf-8', html.encode('utf-8'))
-    
-    def _parse_query(self) -> Dict[str, str]:
-        parsed = urllib.parse.urlparse(self.path)
-        return dict(urllib.parse.parse_qsl(parsed.query))
-    
-    def _get_path(self) -> str:
-        return urllib.parse.urlparse(self.path).path
-    
-    def do_GET(self):
-        path = self._get_path()
-        query = self._parse_query()
-        
-        routes = {
-            '/': self._handle_dashboard,
-            '/api/stats': self._handle_api_stats,
-            '/api/ips': self._handle_api_ips,
-            '/api/ip': self._handle_api_ip_detail,
-            '/api/history': self._handle_api_history,
-            '/api/hourly': self._handle_api_hourly,
-            '/api/monitor/status': self._handle_api_monitor_status,
-        }
-        
-        handler = routes.get(path)
-        if handler:
-            try:
-                handler(query)
-            except Exception as e:
-                logger.error(f"Error handling {path}: {e}")
-                self._send_json({"error": str(e)}, 500)
-        else:
-            self._send_json({"error": "Not found"}, 404)
-    
-    def do_POST(self):
-        path = self._get_path()
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length).decode('utf-8') if content_length else '{}'
-        
-        try:
-            data = json.loads(body) if body else {}
-        except json.JSONDecodeError:
-            data = {}
-        
-        routes = {
-            '/api/scan/initial': self._handle_api_initial_scan,
-            '/api/scan/test': self._handle_api_test_now,
-            '/api/monitor/start': self._handle_api_monitor_start,
-            '/api/monitor/stop': self._handle_api_monitor_stop,
-            '/api/monitor/interval': self._handle_api_set_interval,
-            '/api/ip/deactivate': self._handle_api_deactivate_ip,
-        }
-        
-        handler = routes.get(path)
-        if handler:
-            try:
-                handler(data)
-            except Exception as e:
-                logger.error(f"Error handling POST {path}: {e}")
-                self._send_json({"error": str(e)}, 500)
-        else:
-            self._send_json({"error": "Not found"}, 404)
-    
-    def _handle_dashboard(self, query: Dict):
-        self._send_html(DASHBOARD_HTML)
-    
-    def _handle_api_stats(self, query: Dict):
-        stats = db.get_statistics()
-        stats['monitor'] = get_monitor_status()
-        self._send_json(stats)
-    
-    def _handle_api_ips(self, query: Dict):
-        order_by = query.get('sort', 'avg_download_speed')
-        order_dir = 'DESC' if query.get('dir', 'desc').upper() == 'DESC' else 'ASC'
-        search = query.get('search', None)
-        active_only = query.get('active', 'true').lower() == 'true'
-        ips = db.get_all_ips_with_stats(order_by=order_by, order_dir=order_dir, search=search, active_only=active_only)
-        self._send_json({"ips": ips, "total": len(ips)})
-    
-    def _handle_api_ip_detail(self, query: Dict):
-        ip = query.get('ip')
-        if not ip:
-            self._send_json({"error": "IP required"}, 400)
-            return
-        details = db.get_ip_details(ip)
-        if details:
-            self._send_json(details)
-        else:
-            self._send_json({"error": "IP not found"}, 404)
-    
-    def _handle_api_history(self, query: Dict):
-        ip = query.get('ip')
-        hours = int(query.get('hours', 24))
-        if not ip:
-            self._send_json({"error": "IP required"}, 400)
-            return
-        history = db.get_ip_history(ip, hours)
-        self._send_json({"ip": ip, "history": history})
-    
-    def _handle_api_hourly(self, query: Dict):
-        hours = int(query.get('hours', 24))
-        stats = db.get_hourly_stats(hours)
-        self._send_json({"hours": hours, "stats": stats})
-    
-    def _handle_api_monitor_status(self, query: Dict):
-        self._send_json(get_monitor_status())
-    
-    def _handle_api_initial_scan(self, data: Dict):
-        def run_scan():
-            results, metadata = run_initial_scan(
-                min_speed=data.get('min_speed', 10.0),
-                max_loss=data.get('max_loss', 0.25),
-                max_latency=data.get('max_latency', 1000),
-                test_count=data.get('test_count', 50)
-            )
-            logger.info(f"Initial scan completed: {metadata}")
-        
-        thread = threading.Thread(target=run_scan, daemon=True)
-        thread.start()
-        self._send_json({"status": "started", "message": "Initial scan started in background"})
-    
-    def _handle_api_test_now(self, data: Dict):
-        def run_test():
-            results = monitor.trigger_immediate_test()
-            logger.info(f"Immediate test completed: {len(results)} results")
-        
-        thread = threading.Thread(target=run_test, daemon=True)
-        thread.start()
-        self._send_json({"status": "started", "message": "Test started"})
-    
-    def _handle_api_monitor_start(self, data: Dict):
-        interval = data.get('interval', 120)
-        start_monitoring(interval, run_immediately=True)
-        self._send_json({"status": "started", "interval": interval})
-    
-    def _handle_api_monitor_stop(self, data: Dict):
-        stop_monitoring()
-        self._send_json({"status": "stopped"})
-    
-    def _handle_api_set_interval(self, data: Dict):
-        interval = data.get('interval', 120)
-        monitor.set_interval(interval)
-        self._send_json({"status": "updated", "interval": interval})
-    
-    def _handle_api_deactivate_ip(self, data: Dict):
-        ip = data.get('ip')
-        if not ip:
-            self._send_json({"error": "IP required"}, 400)
-            return
-        db.deactivate_ip(ip)
-        self._send_json({"status": "deactivated", "ip": ip})
-
-
-class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
-    allow_reuse_address = True
-    daemon_threads = True
-
-
-def run_dashboard(host: str = None, port: int = None, auto_start_monitor: bool = True):
-    """Run the dashboard web server"""
-    host = host or DASHBOARD_CONFIG['host']
-    port = port or DASHBOARD_CONFIG['port']
-    
-    if auto_start_monitor:
-        start_monitoring(run_immediately=False)
-    
-    server = ThreadedHTTPServer((host, port), DashboardHandler)
-    
-    logger.info(f"Dashboard running at http://{host}:{port}")
-    print(f"\n{'='*60}")
-    print(f"  Cloudflare IP Monitor Dashboard")
-    print(f"  Running at: http://localhost:{port}")
-    print(f"{'='*60}\n")
-    
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\nShutting down...")
-        stop_monitoring()
-        server.shutdown()
-
-
-if __name__ == "__main__":
-    import argparse
-    
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    
-    parser = argparse.ArgumentParser(description='Cloudflare IP Monitor Dashboard')
-    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
-    parser.add_argument('--port', type=int, default=8080, help='Port to listen on')
-    parser.add_argument('--no-monitor', action='store_true', help='Do not auto-start monitor')
-    
-    args = parser.parse_args()
-    
-    run_dashboard(host=args.host, port=args.port, auto_start_monitor=not args.no_monitor)
+</html>
