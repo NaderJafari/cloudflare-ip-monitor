@@ -226,3 +226,116 @@ def deactivate_ip():
         db.session.commit()
 
     return jsonify({"status": "deactivated", "ip": ip_address})
+
+
+@api_bp.route("/ips/deactivate-all", methods=["POST"])
+def deactivate_all_ips():
+    count = IP.query.filter_by(is_active=True).update({"is_active": False})
+    db.session.commit()
+    return jsonify({"status": "deactivated", "count": count})
+
+
+@api_bp.route("/ips/deactivate-dead", methods=["POST"])
+def deactivate_dead_ips():
+    """Deactivate active IPs whose download speed has been 0 over a range.
+
+    Accepts JSON body:
+        mode: "tests" | "hours"
+        value: int  (last N tests  or  last N hours)
+
+    Logic: for each active IP, look at the relevant test window.
+    If *every* test in that window has download_speed_mbps <= 0 (or NULL),
+    the IP is considered dead and gets deactivated.
+    IPs with zero tests in the window are NOT touched.
+    """
+    data = request.get_json(silent=True) or {}
+    mode = data.get("mode", "tests")
+    value = int(data.get("value", 10))
+
+    if mode == "hours":
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=value)
+        dead_ids = (
+            db.session.query(TestResult.ip_id)
+            .join(IP)
+            .filter(IP.is_active == True, TestResult.test_time >= cutoff)  # noqa: E712
+            .group_by(TestResult.ip_id)
+            .having(
+                func.sum(
+                    db.case((TestResult.download_speed_mbps > 0, 1), else_=0)
+                ) == 0
+            )
+            .all()
+        )
+    else:
+        # "tests" mode — use window function via raw SQL
+        from sqlalchemy import text
+
+        dead_ids = db.session.execute(
+            text("""
+                SELECT ip_id FROM (
+                    SELECT ip_id, download_speed_mbps,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ip_id ORDER BY test_time DESC
+                        ) AS rn
+                    FROM test_results
+                    WHERE ip_id IN (SELECT id FROM ips WHERE is_active = 1)
+                )
+                WHERE rn <= :last_n
+                GROUP BY ip_id
+                HAVING SUM(CASE WHEN download_speed_mbps > 0 THEN 1 ELSE 0 END) = 0
+            """),
+            {"last_n": value},
+        ).fetchall()
+
+    ids = [row[0] for row in dead_ids]
+    count = 0
+    if ids:
+        count = IP.query.filter(IP.id.in_(ids)).update(
+            {"is_active": False}, synchronize_session=False
+        )
+        db.session.commit()
+
+    return jsonify({"status": "deactivated", "count": count, "mode": mode, "value": value})
+
+
+@api_bp.route("/ips/preview-dead")
+def preview_dead_ips():
+    """Return the count of IPs that *would* be deactivated (dry-run)."""
+    mode = request.args.get("mode", "tests")
+    value = int(request.args.get("value", 10))
+
+    if mode == "hours":
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=value)
+        dead_ids = (
+            db.session.query(TestResult.ip_id)
+            .join(IP)
+            .filter(IP.is_active == True, TestResult.test_time >= cutoff)  # noqa: E712
+            .group_by(TestResult.ip_id)
+            .having(
+                func.sum(
+                    db.case((TestResult.download_speed_mbps > 0, 1), else_=0)
+                ) == 0
+            )
+            .all()
+        )
+    else:
+        from sqlalchemy import text
+
+        dead_ids = db.session.execute(
+            text("""
+                SELECT ip_id FROM (
+                    SELECT ip_id, download_speed_mbps,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ip_id ORDER BY test_time DESC
+                        ) AS rn
+                    FROM test_results
+                    WHERE ip_id IN (SELECT id FROM ips WHERE is_active = 1)
+                )
+                WHERE rn <= :last_n
+                GROUP BY ip_id
+                HAVING SUM(CASE WHEN download_speed_mbps > 0 THEN 1 ELSE 0 END) = 0
+            """),
+            {"last_n": value},
+        ).fetchall()
+
+    return jsonify({"count": len(dead_ids), "mode": mode, "value": value})
