@@ -108,3 +108,44 @@ def cleanup_old_data(retention_days):
         logger.info(f"Cleaned up {deleted} old test records")
 
     return deleted
+
+
+def cleanup_dead_ips(no_speed_tests=10):
+    """Deactivate IPs that have had no download speed for the last N tests.
+
+    For each active IP, examines the most recent ``no_speed_tests`` test
+    results.  If *every* result in that window has download_speed_mbps <= 0
+    (or NULL), the IP is deactivated.  IPs with fewer than
+    ``no_speed_tests`` results are left untouched.
+    """
+    dead_ids = db.session.execute(
+        text("""
+            SELECT ip_id FROM (
+                SELECT ip_id, download_speed_mbps,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ip_id ORDER BY test_time DESC
+                    ) AS rn
+                FROM test_results
+                WHERE ip_id IN (SELECT id FROM ips WHERE is_active = 1)
+            )
+            WHERE rn <= :last_n
+            GROUP BY ip_id
+            HAVING COUNT(*) >= :last_n
+               AND SUM(CASE WHEN download_speed_mbps > 0 THEN 1 ELSE 0 END) = 0
+        """),
+        {"last_n": no_speed_tests},
+    ).fetchall()
+
+    ids = [row[0] for row in dead_ids]
+    count = 0
+    if ids:
+        count = IP.query.filter(IP.id.in_(ids)).update(
+            {"is_active": False}, synchronize_session=False
+        )
+        db.session.commit()
+        logger.info(
+            f"Auto-cleanup deactivated {count} IPs with no download speed "
+            f"in last {no_speed_tests} tests"
+        )
+
+    return count

@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Callable, List, Optional
 
 from app.config import Config
-from app.services.ip_service import cleanup_old_data, get_active_ips
+from app.services.ip_service import cleanup_dead_ips, cleanup_old_data, get_active_ips
 
 logger = logging.getLogger(__name__)
 
@@ -35,29 +35,49 @@ class PeriodicMonitor:
         logger.info("Starting periodic test cycle...")
         try:
             with self.app.app_context():
-                active_ips = get_active_ips(
-                    limit=Config.MONITOR["max_ips_per_cycle"]
-                )
+                active_ips = get_active_ips()
 
             if not active_ips:
                 logger.warning("No active IPs to test. Run initial scan first.")
                 return []
 
-            ip_list = [ip["ip_address"] for ip in active_ips]
-            logger.info(f"Testing {len(ip_list)} IPs...")
-
-            results = self.app.scanner.test_specific_ips(
-                ip_addresses=ip_list,
-                timeout=Config.MONITOR["download_timeout"],
-                threads=Config.MONITOR["threads"],
+            all_ip_list = [ip["ip_address"] for ip in active_ips]
+            batch_size = Config.MONITOR["max_ips_per_cycle"]
+            total = len(all_ip_list)
+            logger.info(
+                f"Testing all {total} active IPs in batches of {batch_size}..."
             )
+
+            all_results = []
+            for i in range(0, total, batch_size):
+                batch = all_ip_list[i : i + batch_size]
+                batch_num = (i // batch_size) + 1
+                total_batches = (total + batch_size - 1) // batch_size
+                logger.info(
+                    f"Testing batch {batch_num}/{total_batches} "
+                    f"({len(batch)} IPs)..."
+                )
+
+                results = self.app.scanner.test_specific_ips(
+                    ip_addresses=batch,
+                    timeout=Config.MONITOR["download_timeout"],
+                    threads=Config.MONITOR["threads"],
+                )
+                all_results.extend(results)
+
+                if self._stop_event.is_set():
+                    logger.info("Monitor stop requested, aborting remaining batches")
+                    break
 
             self._last_test_time = datetime.now()
             self._test_count += 1
-            logger.info(f"Test cycle completed: {len(results)} results")
+            logger.info(
+                f"Test cycle completed: {len(all_results)} results "
+                f"from {total} IPs"
+            )
 
-            self._notify_callbacks(results)
-            return results
+            self._notify_callbacks(all_results)
+            return all_results
 
         except Exception as e:
             logger.error(f"Test cycle failed: {e}")
@@ -67,6 +87,8 @@ class PeriodicMonitor:
         try:
             with self.app.app_context():
                 cleanup_old_data(Config.RETENTION_DAYS)
+                if Config.CLEANUP["enabled"]:
+                    cleanup_dead_ips(Config.CLEANUP["no_speed_tests"])
         except Exception as e:
             logger.error(f"Cleanup failed: {e}")
 

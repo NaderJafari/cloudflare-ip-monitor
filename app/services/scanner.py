@@ -1,6 +1,7 @@
 import logging
 import os
 import platform
+import shutil
 import stat
 import subprocess
 import threading
@@ -133,22 +134,27 @@ class CloudflareScanner:
     # ── Thread-safe helpers ──────────────────────────────────────
 
     @staticmethod
-    def _temp_files(prefix: str) -> Tuple[Path, Path]:
-        """Create unique file paths so concurrent runs never collide."""
+    def _temp_files(prefix: str) -> Tuple[Path, Path, Path]:
+        """Create unique file paths and working directory so concurrent runs never collide."""
         uid = uuid.uuid4().hex[:8]
         ip_file = Config.DATA_DIR / f"{prefix}_ips_{uid}.txt"
         result_file = Config.DATA_DIR / f"{prefix}_result_{uid}.csv"
-        return ip_file, result_file
+        work_dir = Config.DATA_DIR / f"{prefix}_work_{uid}"
+        work_dir.mkdir(parents=True, exist_ok=True)
+        return ip_file, result_file, work_dir
 
     @staticmethod
     def _cleanup(*paths: Path):
         for p in paths:
             try:
-                p.unlink(missing_ok=True)
+                if p.is_dir():
+                    shutil.rmtree(p, ignore_errors=True)
+                else:
+                    p.unlink(missing_ok=True)
             except OSError:
                 pass
 
-    def _run_process(self, cmd, timeout=3600):
+    def _run_process(self, cmd, timeout=3600, cwd=None):
         """Run the scanner binary with cancellation and timeout support.
 
         Uses Popen so the process can be terminated mid-flight via
@@ -161,7 +167,7 @@ class CloudflareScanner:
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=str(Config.SCANNER_DIR),
+            cwd=str(cwd or Config.SCANNER_DIR),
         )
         logger.debug(f"Process started with PID {self._process.pid}")
 
@@ -289,8 +295,14 @@ class CloudflareScanner:
             "-dn", str(config["test_count"]),
             "-dt", str(config["download_timeout"]),
             "-tp", str(config["port"]),
-            "-p", "0",
         ]
+        if config.get("httping"):
+            cmd.append("-httping")
+            httping_code = config.get("httping_code")
+            if httping_code:
+                cmd.extend(["-httping-code", str(httping_code)])
+        else:
+            cmd.extend(["-p", "0"])
         if extra_args:
             cmd.extend(extra_args)
         return cmd
@@ -310,7 +322,7 @@ class CloudflareScanner:
             logger.info("Initial scan skipped: another scan is already running")
             return [], {"status": "skipped", "reason": "scan already running"}
 
-        ip_file, result_file = self._temp_files("scan")
+        ip_file, result_file, work_dir = self._temp_files("scan")
         try:
             self._is_scanning = True
             self._scan_start_time = time.time()
@@ -334,7 +346,8 @@ class CloudflareScanner:
                 f"max_latency={config['max_latency']} ms, "
                 f"max_loss_rate={config['max_loss_rate']}, "
                 f"test_count={config['test_count']}, "
-                f"threads={config['threads']}"
+                f"threads={config['threads']}, "
+                f"httping={config.get('httping', False)}"
             )
 
             if ip_ranges is None:
@@ -357,7 +370,7 @@ class CloudflareScanner:
             )
 
             logger.info("Launching scanner binary for initial scan...")
-            rc = self._run_process(cmd, timeout=3600)
+            rc = self._run_process(cmd, timeout=3600, cwd=work_dir)
             duration = time.time() - self._scan_start_time
             logger.info(
                 f"Scanner process finished in {duration:.1f}s "
@@ -460,8 +473,8 @@ class CloudflareScanner:
             return [], meta
 
         finally:
-            logger.debug(f"Cleaning up temp files: {ip_file}, {result_file}")
-            self._cleanup(ip_file, result_file)
+            logger.debug(f"Cleaning up temp files: {ip_file}, {result_file}, {work_dir}")
+            self._cleanup(ip_file, result_file, work_dir)
             self._is_scanning = False
             self._scan_start_time = None
             self._lock.release()
@@ -488,7 +501,7 @@ class CloudflareScanner:
             f"timeout={config['download_timeout']}s)"
         )
 
-        ip_file, result_file = self._temp_files("monitor")
+        ip_file, result_file, work_dir = self._temp_files("monitor")
         try:
             with open(ip_file, "w") as f:
                 for ip in ip_addresses:
@@ -506,7 +519,7 @@ class CloudflareScanner:
                 capture_output=True,
                 text=True,
                 timeout=300,
-                cwd=str(Config.SCANNER_DIR),
+                cwd=str(work_dir),
             )
             elapsed = time.time() - start_time
 
@@ -550,7 +563,7 @@ class CloudflareScanner:
             logger.error(f"Periodic test failed: {e}", exc_info=True)
             return []
         finally:
-            self._cleanup(ip_file, result_file)
+            self._cleanup(ip_file, result_file, work_dir)
 
     # ── Cancellation & status ────────────────────────────────────
 
