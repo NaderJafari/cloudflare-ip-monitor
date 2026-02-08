@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 
 from flask import current_app, jsonify, request, session
+from sqlalchemy import func
 
 from app.api import api_bp
 from app.extensions import db
