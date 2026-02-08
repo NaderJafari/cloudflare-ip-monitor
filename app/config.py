@@ -59,6 +59,8 @@ class Config:
             "SCAN_URL",
             "https://speed.cloudflare.com/__down?bytes=52428800",
         ),
+        "httping": _env("SCAN_HTTPING", "true").lower() in ("true", "1", "yes"),
+        "httping_code": _env("SCAN_HTTPING_CODE", "200"),
         "schedule_interval": _env("SCAN_SCHEDULE_INTERVAL", 0, int),
     }
 
@@ -74,6 +76,14 @@ class Config:
             "MONITOR_URL",
             "https://speed.cloudflare.com/__down?bytes=52428800",
         ),
+        "httping": _env("MONITOR_HTTPING", "true").lower() in ("true", "1", "yes"),
+        "httping_code": _env("MONITOR_HTTPING_CODE", "200"),
+    }
+
+    # Cleanup parameters
+    CLEANUP = {
+        "enabled": _env("CLEANUP_ENABLED", "true").lower() in ("true", "1", "yes"),
+        "no_speed_tests": _env("CLEANUP_NO_SPEED_TESTS", 10, int),
     }
 
     # Dashboard

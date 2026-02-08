@@ -43,6 +43,10 @@ def create_app(config=None):
     app.scanner = CloudflareScanner(app)
     app.monitor = PeriodicMonitor(app)
 
+    # Auto-start scan scheduler if configured
+    if app.scanner._schedule_interval > 0:
+        app.scanner.start_schedule()
+
     if not app.debug or app.testing:
         logging.basicConfig(
             level=getattr(logging, Config.LOG_LEVEL),
