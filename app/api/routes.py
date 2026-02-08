@@ -1,9 +1,9 @@
 import logging
 import threading
 from datetime import date, datetime, timedelta, timezone
+from functools import wraps
 
-from flask import current_app, jsonify, request
-from sqlalchemy import func
+from flask import current_app, jsonify, request, session
 
 from app.api import api_bp
 from app.extensions import db
@@ -20,10 +20,45 @@ VALID_SORT_COLUMNS = {
     "last_tested",
     "best_latency",
     "best_download_speed",
+    "smart_score",
 }
 
 
+def login_required_api(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("logged_in"):
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+def compute_smart_score(ip_dict, max_speed, max_latency, reliable_tests=5):
+    """Compute a composite quality score for an IP.
+
+    Weights: speed 40%, latency 35%, loss rate 25%.
+    Test reliability acts as a multiplier: IPs with fewer tests than
+    `reliable_tests` get their score dampened significantly so that
+    recently-added IPs don't dominate just because of one fast result.
+    """
+    speed = ip_dict.get("avg_download_speed") or 0
+    latency = ip_dict.get("avg_latency") or 9999
+    loss = ip_dict.get("avg_loss_rate") or 1
+    tests = ip_dict.get("total_tests") or 0
+
+    speed_norm = (speed / max_speed) if max_speed > 0 else 0
+    latency_norm = max(0, 1 - (latency / max_latency)) if max_latency > 0 else 0
+    loss_norm = max(0, 1 - loss)
+
+    raw_score = (speed_norm * 0.40) + (latency_norm * 0.35) + (loss_norm * 0.25)
+
+    # Dampen score for IPs with few tests (min 50% of raw score)
+    test_reliability = min(tests / reliable_tests, 1.0)
+    return raw_score * (0.5 + 0.5 * test_reliability)
+
+
 @api_bp.route("/stats")
+@login_required_api
 def get_stats():
     total_active = IP.query.filter_by(is_active=True).count()
     total_tests = TestResult.query.count()
@@ -68,6 +103,7 @@ def get_stats():
 
 
 @api_bp.route("/ips")
+@login_required_api
 def get_ips():
     order_by = request.args.get("sort", "avg_download_speed")
     order_dir = request.args.get("dir", "DESC").upper()
@@ -80,6 +116,18 @@ def get_ips():
     if search:
         query = query.filter(IP.ip_address.like(f"%{search}%"))
 
+    if order_by == "smart_score":
+        ips = query.all()
+        result = [ip.to_dict() for ip in ips]
+        max_speed = max((d["avg_download_speed"] or 0 for d in result), default=1)
+        max_latency = max((d["avg_latency"] or 0 for d in result), default=1)
+        for d in result:
+            d["smart_score"] = round(
+                compute_smart_score(d, max_speed, max_latency), 4
+            )
+        result.sort(key=lambda d: d["smart_score"], reverse=True)
+        return jsonify({"ips": result, "total": len(result)})
+
     if order_by in VALID_SORT_COLUMNS:
         col = getattr(IP, order_by)
         query = query.order_by(col.desc() if order_dir == "DESC" else col.asc())
@@ -90,6 +138,7 @@ def get_ips():
 
 
 @api_bp.route("/ip")
+@login_required_api
 def get_ip_detail():
     ip_address = request.args.get("ip")
     if not ip_address:
@@ -103,6 +152,7 @@ def get_ip_detail():
 
 
 @api_bp.route("/history")
+@login_required_api
 def get_history():
     ip_address = request.args.get("ip")
     hours = int(request.args.get("hours", 24))
@@ -125,6 +175,7 @@ def get_history():
 
 
 @api_bp.route("/hourly")
+@login_required_api
 def get_hourly():
     hours = int(request.args.get("hours", 24))
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
@@ -157,11 +208,13 @@ def get_hourly():
 
 
 @api_bp.route("/monitor/status")
+@login_required_api
 def monitor_status():
     return jsonify(current_app.monitor.get_status())
 
 
 @api_bp.route("/scan/initial", methods=["POST"])
+@login_required_api
 def start_initial_scan():
     scanner = current_app.scanner
     if scanner._is_scanning:
@@ -196,6 +249,7 @@ def start_initial_scan():
 
 
 @api_bp.route("/scan/stop", methods=["POST"])
+@login_required_api
 def stop_scan():
     cancelled = current_app.scanner.cancel_scan()
     if cancelled:
@@ -204,11 +258,13 @@ def stop_scan():
 
 
 @api_bp.route("/scan/status")
+@login_required_api
 def scan_status():
     return jsonify(current_app.scanner.get_scan_status())
 
 
 @api_bp.route("/scan/schedule/start", methods=["POST"])
+@login_required_api
 def start_scan_schedule():
     data = request.get_json(silent=True) or {}
     interval = data.get("interval", 3600)
@@ -220,12 +276,14 @@ def start_scan_schedule():
 
 
 @api_bp.route("/scan/schedule/stop", methods=["POST"])
+@login_required_api
 def stop_scan_schedule():
     current_app.scanner.stop_schedule()
     return jsonify({"status": "stopped"})
 
 
 @api_bp.route("/scan/schedule/interval", methods=["POST"])
+@login_required_api
 def set_scan_schedule_interval():
     data = request.get_json(silent=True) or {}
     interval = data.get("interval", 3600)
@@ -237,6 +295,7 @@ def set_scan_schedule_interval():
 
 
 @api_bp.route("/scan/test", methods=["POST"])
+@login_required_api
 def test_now():
     app = current_app._get_current_object()
 
@@ -249,6 +308,7 @@ def test_now():
 
 
 @api_bp.route("/monitor/start", methods=["POST"])
+@login_required_api
 def start_monitor():
     data = request.get_json(silent=True) or {}
     interval = data.get("interval", 120)
@@ -258,12 +318,14 @@ def start_monitor():
 
 
 @api_bp.route("/monitor/stop", methods=["POST"])
+@login_required_api
 def stop_monitor():
     current_app.monitor.stop()
     return jsonify({"status": "stopped"})
 
 
 @api_bp.route("/monitor/interval", methods=["POST"])
+@login_required_api
 def set_interval():
     data = request.get_json(silent=True) or {}
     interval = data.get("interval", 120)
@@ -272,6 +334,7 @@ def set_interval():
 
 
 @api_bp.route("/ip/deactivate", methods=["POST"])
+@login_required_api
 def deactivate_ip():
     data = request.get_json(silent=True) or {}
     ip_address = data.get("ip")
@@ -287,6 +350,7 @@ def deactivate_ip():
 
 
 @api_bp.route("/ips/deactivate-all", methods=["POST"])
+@login_required_api
 def deactivate_all_ips():
     count = IP.query.filter_by(is_active=True).update({"is_active": False})
     db.session.commit()
@@ -294,6 +358,7 @@ def deactivate_all_ips():
 
 
 @api_bp.route("/ips/deactivate-dead", methods=["POST"])
+@login_required_api
 def deactivate_dead_ips():
     """Deactivate active IPs whose download speed has been 0 over a range.
 
@@ -357,6 +422,7 @@ def deactivate_dead_ips():
 
 
 @api_bp.route("/ips/preview-dead")
+@login_required_api
 def preview_dead_ips():
     """Return the count of IPs that *would* be deactivated (dry-run)."""
     mode = request.args.get("mode", "tests")

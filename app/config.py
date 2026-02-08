@@ -90,6 +90,11 @@ class Config:
     DASHBOARD_HOST = _env("DASHBOARD_HOST", "0.0.0.0")
     DASHBOARD_PORT = _env("DASHBOARD_PORT", 8080, int)
 
+    # Admin credentials
+    ADMIN_USERNAME = _env("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD = _env("ADMIN_PASSWORD", "admin")
+    SECRET_KEY = _env("SECRET_KEY", "cf-ip-monitor-secret-change-me")
+
     # Data retention
     RETENTION_DAYS = _env("RETENTION_DAYS", 30, int)
 

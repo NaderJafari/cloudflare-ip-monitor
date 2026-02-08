@@ -10,6 +10,7 @@ from app.extensions import db
 def create_app(config=None):
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.secret_key = Config.SECRET_KEY
 
     if config:
         app.config.update(config)
