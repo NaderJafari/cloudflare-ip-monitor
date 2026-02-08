@@ -165,21 +165,33 @@ def monitor_status():
 def start_initial_scan():
     scanner = current_app.scanner
     if scanner._is_scanning:
+        logger.info("Initial scan request rejected: scan already running")
         return jsonify({"status": "rejected", "reason": "scan already running"}), 409
 
     data = request.get_json(silent=True) or {}
     app = current_app._get_current_object()
 
-    def run_scan():
-        results, metadata = app.scanner.initial_scan(
-            min_speed=data.get("min_speed", 10.0),
-            max_loss=data.get("max_loss", 0.25),
-            max_latency=data.get("max_latency", 1000),
-            test_count=data.get("test_count", 50),
-        )
-        logger.info(f"Initial scan completed: {metadata}")
+    logger.info(
+        f"Initial scan requested via API with params: "
+        f"min_speed={data.get('min_speed', 10.0)}, "
+        f"max_loss={data.get('max_loss', 0.25)}, "
+        f"max_latency={data.get('max_latency', 1000)}, "
+        f"test_count={data.get('test_count', 50)}"
+    )
 
-    threading.Thread(target=run_scan, daemon=True).start()
+    def run_scan():
+        try:
+            results, metadata = app.scanner.initial_scan(
+                min_speed=data.get("min_speed", 10.0),
+                max_loss=data.get("max_loss", 0.25),
+                max_latency=data.get("max_latency", 1000),
+                test_count=data.get("test_count", 50),
+            )
+            logger.info(f"Initial scan thread finished: {metadata.get('status', 'unknown')}")
+        except Exception as e:
+            logger.error(f"Initial scan thread crashed: {e}", exc_info=True)
+
+    threading.Thread(target=run_scan, daemon=True, name="initial-scan").start()
     return jsonify({"status": "started", "message": "Initial scan started in background"})
 
 

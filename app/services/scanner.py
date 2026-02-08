@@ -60,7 +60,9 @@ class CloudflareScanner:
         self._schedule_last_run: Optional[str] = None
         self._schedule_scan_count = 0
 
+        logger.info(f"Initializing CloudflareScanner (binary: {self.binary_path})")
         self._ensure_binary()
+        logger.info("CloudflareScanner initialized successfully")
 
     # ── Binary management ────────────────────────────────────────
 
@@ -150,32 +152,78 @@ class CloudflareScanner:
         """Run the scanner binary with cancellation and timeout support.
 
         Uses Popen so the process can be terminated mid-flight via
-        ``cancel_scan()``.  Polls every 0.5 s.
+        ``cancel_scan()``.  Stdout/stderr are drained in background
+        threads to prevent pipe-buffer deadlocks.
         """
         self._cancel_event.clear()
+        logger.debug(f"Launching process: {' '.join(str(c) for c in cmd)}")
         self._process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=str(Config.SCANNER_DIR),
         )
+        logger.debug(f"Process started with PID {self._process.pid}")
+
+        # Drain stdout/stderr in background threads to prevent deadlock.
+        # Without draining, the OS pipe buffer (~64 KB) fills up and the
+        # child process blocks on write, causing the poll loop to hang.
+        stdout_lines = []
+        stderr_lines = []
+
+        def _drain(stream, sink):
+            try:
+                for raw_line in stream:
+                    sink.append(raw_line)
+            except Exception:
+                pass
+            finally:
+                stream.close()
+
+        t_out = threading.Thread(target=_drain, args=(self._process.stdout, stdout_lines), daemon=True)
+        t_err = threading.Thread(target=_drain, args=(self._process.stderr, stderr_lines), daemon=True)
+        t_out.start()
+        t_err.start()
+
         try:
             deadline = time.time() + timeout
             while self._process.poll() is None:
                 if self._cancel_event.is_set():
+                    logger.info(f"Cancellation requested, terminating PID {self._process.pid}")
                     self._process.terminate()
                     try:
                         self._process.wait(timeout=5)
                     except subprocess.TimeoutExpired:
+                        logger.warning(f"Process did not terminate gracefully, killing PID {self._process.pid}")
                         self._process.kill()
                         self._process.wait()
                     raise ScanCancelled()
                 if time.time() > deadline:
+                    logger.error(f"Process timed out after {timeout}s, killing PID {self._process.pid}")
                     self._process.kill()
                     self._process.wait()
                     raise subprocess.TimeoutExpired(cmd, timeout)
                 time.sleep(0.5)
-            return self._process.returncode
+
+            # Wait for drain threads to finish reading remaining output
+            t_out.join(timeout=5)
+            t_err.join(timeout=5)
+
+            rc = self._process.returncode
+            stdout_text = b"".join(stdout_lines).decode("utf-8", errors="replace").strip()
+            stderr_text = b"".join(stderr_lines).decode("utf-8", errors="replace").strip()
+
+            if stdout_text:
+                for line in stdout_text.splitlines()[:50]:
+                    logger.debug(f"[scanner stdout] {line}")
+            if stderr_text:
+                for line in stderr_text.splitlines()[:50]:
+                    logger.warning(f"[scanner stderr] {line}")
+
+            if rc != 0:
+                logger.warning(f"Scanner process exited with code {rc}")
+
+            return rc
         finally:
             self._process = None
 
@@ -187,11 +235,14 @@ class CloudflareScanner:
             logger.warning(f"Result file not found: {result_file}")
             return results
 
+        skipped_lines = 0
+        parse_errors = 0
         try:
             with open(result_file, "r", encoding="utf-8", errors="ignore") as f:
-                for line in f:
+                for line_num, line in enumerate(f, 1):
                     line = line.strip()
                     if not line or ("IP" in line and "Latency" in line):
+                        skipped_lines += 1
                         continue
                     parts = line.split(",")
                     if len(parts) >= 6:
@@ -207,10 +258,24 @@ class CloudflareScanner:
                                 )
                             )
                         except (ValueError, IndexError) as e:
-                            logger.debug(f"Failed to parse line: {line}, error: {e}")
+                            parse_errors += 1
+                            logger.debug(
+                                f"Failed to parse line {line_num}: "
+                                f"{line!r}, error: {e}"
+                            )
+                    else:
+                        parse_errors += 1
+                        logger.debug(
+                            f"Line {line_num} has {len(parts)} fields "
+                            f"(expected >= 6): {line!r}"
+                        )
         except Exception as e:
-            logger.error(f"Failed to read result file: {e}")
+            logger.error(f"Failed to read result file {result_file}: {e}")
 
+        logger.info(
+            f"Parsed result file: {len(results)} valid entries, "
+            f"{parse_errors} errors, {skipped_lines} skipped"
+        )
         return results
 
     def _build_command(self, ip_file, result_file, config, extra_args=None):
@@ -242,6 +307,7 @@ class CloudflareScanner:
         threads=None,
     ) -> Tuple[List[ScanResult], Dict]:
         if not self._lock.acquire(blocking=False):
+            logger.info("Initial scan skipped: another scan is already running")
             return [], {"status": "skipped", "reason": "scan already running"}
 
         ip_file, result_file = self._temp_files("scan")
@@ -262,10 +328,20 @@ class CloudflareScanner:
             if threads is not None:
                 config["threads"] = threads
 
+            logger.info(
+                "Initial scan starting with config: "
+                f"min_speed={config['min_speed']} MB/s, "
+                f"max_latency={config['max_latency']} ms, "
+                f"max_loss_rate={config['max_loss_rate']}, "
+                f"test_count={config['test_count']}, "
+                f"threads={config['threads']}"
+            )
+
             if ip_ranges is None:
                 ip_ranges = (
                     Config.CLOUDFLARE_IPV4_RANGES + Config.CLOUDFLARE_IPV6_RANGES
                 )
+            logger.info(f"Writing {len(ip_ranges)} IP ranges to {ip_file}")
             with open(ip_file, "w") as f:
                 f.write("\n".join(ip_ranges))
 
@@ -280,11 +356,25 @@ class CloudflareScanner:
                 ],
             )
 
-            logger.info("Starting initial scan...")
-            self._run_process(cmd, timeout=3600)
-
+            logger.info("Launching scanner binary for initial scan...")
+            rc = self._run_process(cmd, timeout=3600)
             duration = time.time() - self._scan_start_time
+            logger.info(
+                f"Scanner process finished in {duration:.1f}s "
+                f"with exit code {rc}"
+            )
+
+            if not result_file.exists():
+                logger.warning(
+                    f"Result file {result_file} not found after scan "
+                    f"(exit code {rc}). Scanner may have failed."
+                )
+            else:
+                result_size = result_file.stat().st_size
+                logger.info(f"Result file size: {result_size} bytes")
+
             results = self._parse_results(result_file)
+            logger.info(f"Parsed {len(results)} total IPs from scanner output")
 
             filtered = [
                 r
@@ -293,9 +383,23 @@ class CloudflareScanner:
                 and r.loss_rate <= config["max_loss_rate"]
                 and r.latency_ms <= config["max_latency"]
             ]
+            logger.info(
+                f"Filtered results: {len(filtered)}/{len(results)} IPs "
+                f"passed criteria"
+            )
 
+            if filtered:
+                best = max(filtered, key=lambda r: r.download_speed)
+                logger.info(
+                    f"Best IP: {best.ip_address} "
+                    f"(speed={best.download_speed:.2f} MB/s, "
+                    f"latency={best.latency_ms:.0f} ms, "
+                    f"loss={best.loss_rate:.2%})"
+                )
+
+            logger.info("Saving results to database...")
             with self.app.app_context():
-                for r in filtered:
+                for i, r in enumerate(filtered):
                     add_test_result(
                         ip_address=r.ip_address,
                         latency_ms=r.latency_ms,
@@ -305,6 +409,8 @@ class CloudflareScanner:
                         packets_received=r.packets_received,
                         test_type="initial_scan",
                     )
+                    if (i + 1) % 10 == 0:
+                        logger.debug(f"Saved {i + 1}/{len(filtered)} IPs to database")
                 scan_id = add_scan_session(
                     total_tested=len(results),
                     passed=len(filtered),
@@ -313,6 +419,10 @@ class CloudflareScanner:
                     max_loss=config["max_loss_rate"],
                     duration=duration,
                 )
+            logger.info(
+                f"Database updated: {len(filtered)} IPs saved, "
+                f"scan session #{scan_id} recorded"
+            )
 
             metadata = {
                 "status": "completed",
@@ -324,13 +434,15 @@ class CloudflareScanner:
             }
             self._last_scan_result = metadata
             logger.info(
-                f"Initial scan completed: {len(filtered)} IPs passed "
-                f"out of {len(results)}"
+                f"Initial scan completed successfully: "
+                f"{len(filtered)} IPs passed out of {len(results)} "
+                f"in {duration:.1f}s"
             )
             return filtered, metadata
 
         except ScanCancelled:
-            logger.info("Initial scan was cancelled")
+            duration = time.time() - (self._scan_start_time or time.time())
+            logger.info(f"Initial scan was cancelled after {duration:.1f}s")
             meta = {"status": "cancelled"}
             self._last_scan_result = meta
             return [], meta
@@ -342,21 +454,24 @@ class CloudflareScanner:
             return [], meta
 
         except Exception as e:
-            logger.error(f"Scan failed: {e}")
+            logger.error(f"Initial scan failed with error: {e}", exc_info=True)
             meta = {"status": "error", "error": str(e)}
             self._last_scan_result = meta
             return [], meta
 
         finally:
+            logger.debug(f"Cleaning up temp files: {ip_file}, {result_file}")
             self._cleanup(ip_file, result_file)
             self._is_scanning = False
             self._scan_start_time = None
             self._lock.release()
+            logger.debug("Scan lock released")
 
     # ── Periodic tests (used by monitor) ─────────────────────────
 
     def test_specific_ips(self, ip_addresses, timeout=None, threads=None):
         if not ip_addresses:
+            logger.debug("test_specific_ips called with empty IP list, skipping")
             return []
 
         config = Config.MONITOR.copy()
@@ -366,6 +481,12 @@ class CloudflareScanner:
         if threads is not None:
             config["threads"] = threads
         config["threads"] = min(config["threads"], len(ip_addresses))
+
+        logger.info(
+            f"Testing {len(ip_addresses)} specific IPs "
+            f"(threads={config['threads']}, "
+            f"timeout={config['download_timeout']}s)"
+        )
 
         ip_file, result_file = self._temp_files("monitor")
         try:
@@ -378,16 +499,31 @@ class CloudflareScanner:
                 ip_file, result_file, config, extra_args=["-allip"]
             )
 
-            logger.debug(f"Testing {len(ip_addresses)} IPs...")
-            subprocess.run(
+            logger.debug(f"Monitor scan command: {' '.join(str(c) for c in cmd)}")
+            start_time = time.time()
+            proc = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=300,
                 cwd=str(Config.SCANNER_DIR),
             )
+            elapsed = time.time() - start_time
+
+            if proc.returncode != 0:
+                logger.warning(
+                    f"Monitor scan exited with code {proc.returncode} "
+                    f"after {elapsed:.1f}s"
+                )
+                if proc.stderr:
+                    for line in proc.stderr.strip().splitlines()[:20]:
+                        logger.warning(f"[monitor stderr] {line}")
 
             results = self._parse_results(result_file)
+            logger.info(
+                f"Monitor scan completed in {elapsed:.1f}s: "
+                f"{len(results)}/{len(ip_addresses)} IPs returned results"
+            )
 
             with self.app.app_context():
                 for r in results:
@@ -400,14 +536,18 @@ class CloudflareScanner:
                         packets_received=r.packets_received,
                         test_type="periodic",
                     )
+            logger.debug(f"Saved {len(results)} periodic test results to database")
 
             return results
 
         except subprocess.TimeoutExpired:
-            logger.warning("Periodic test timed out")
+            logger.warning(
+                f"Periodic test timed out after 300s "
+                f"for {len(ip_addresses)} IPs"
+            )
             return []
         except Exception as e:
-            logger.error(f"Test failed: {e}")
+            logger.error(f"Periodic test failed: {e}", exc_info=True)
             return []
         finally:
             self._cleanup(ip_file, result_file)
@@ -417,8 +557,10 @@ class CloudflareScanner:
     def cancel_scan(self) -> bool:
         """Cancel the currently running initial scan."""
         if self._is_scanning:
+            logger.info("Scan cancellation requested")
             self._cancel_event.set()
             return True
+        logger.debug("Cancel requested but no scan is running")
         return False
 
     def get_scan_status(self) -> dict:
@@ -440,18 +582,33 @@ class CloudflareScanner:
     # ── Periodic scan scheduler ──────────────────────────────────
 
     def _schedule_loop(self):
+        logger.info("Scan schedule loop started")
         while not self._schedule_stop.is_set():
+            logger.info(
+                f"Scheduled scan #{self._schedule_scan_count + 1} starting..."
+            )
             try:
                 _, meta = self.initial_scan()
-                if meta.get("status") == "completed":
+                status = meta.get("status", "unknown")
+                if status == "completed":
                     self._schedule_scan_count += 1
                     self._schedule_last_run = datetime.now().isoformat()
-                elif meta.get("status") == "skipped":
+                    logger.info(
+                        f"Scheduled scan completed "
+                        f"(total completed: {self._schedule_scan_count})"
+                    )
+                elif status == "skipped":
                     logger.info("Scheduled scan skipped: another scan in progress")
+                else:
+                    logger.warning(f"Scheduled scan ended with status: {status}")
             except Exception as e:
-                logger.error(f"Scheduled scan failed: {e}")
+                logger.error(f"Scheduled scan failed: {e}", exc_info=True)
 
+            logger.debug(
+                f"Waiting {self._schedule_interval}s until next scheduled scan"
+            )
             self._schedule_stop.wait(self._schedule_interval)
+        logger.info("Scan schedule loop exited")
 
     def start_schedule(self, interval=None):
         if self._schedule_running:

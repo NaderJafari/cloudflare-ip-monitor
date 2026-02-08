@@ -476,7 +476,11 @@
                 test_count: parseInt(document.getElementById('scan-test-count').value)
             };
             const result = await fetchAPI('/api/scan/initial', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-            if (result) { showToast('Initial scan started! This may take several minutes.', 'success'); closeScanModal(); }
+            if (result) {
+                showToast('Initial scan started! This may take several minutes.', 'success');
+                closeScanModal();
+                startScanPolling();
+            }
         }
 
         async function testNow() {
@@ -510,6 +514,21 @@
             loadIPs();
         }
 
+        var _scanPollTimer = null;
+        var _wasScanningLast = false;
+
+        function startScanPolling() {
+            if (_scanPollTimer) return;
+            _scanPollTimer = setInterval(function() { loadStats(); }, 3000);
+        }
+
+        function stopScanPolling() {
+            if (_scanPollTimer) {
+                clearInterval(_scanPollTimer);
+                _scanPollTimer = null;
+            }
+        }
+
         function updateScanStatus(status) {
             var dot = document.getElementById('scan-sched-dot');
             var text = document.getElementById('scan-sched-status-text');
@@ -533,12 +552,30 @@
             if (status.is_scanning) {
                 stopBtn.style.display = '';
                 headerStopBtn.style.display = '';
-                runningText.textContent = 'Scanning... ' + (status.elapsed_seconds || 0) + 's';
+                var elapsed = status.elapsed_seconds || 0;
+                var min = Math.floor(elapsed / 60);
+                var sec = elapsed % 60;
+                runningText.textContent = 'Scanning... ' + (min > 0 ? min + 'm ' : '') + sec + 's';
+                startScanPolling();
             } else {
                 stopBtn.style.display = 'none';
                 headerStopBtn.style.display = 'none';
                 runningText.textContent = '';
+                if (_wasScanningLast) {
+                    stopScanPolling();
+                    var lastResult = status.last_result;
+                    if (lastResult && lastResult.status === 'completed') {
+                        showToast('Scan completed! Found ' + (lastResult.passed || 0) + ' IPs in ' + (lastResult.duration_seconds || 0).toFixed(0) + 's', 'success');
+                    } else if (lastResult && lastResult.status === 'cancelled') {
+                        showToast('Scan was cancelled', 'error');
+                    } else if (lastResult && lastResult.status === 'error') {
+                        showToast('Scan failed: ' + (lastResult.error || 'unknown error'), 'error');
+                    }
+                    loadIPs();
+                    loadHourlyChart();
+                }
             }
+            _wasScanningLast = status.is_scanning;
         }
 
         async function stopCurrentScan() {
