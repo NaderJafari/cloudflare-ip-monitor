@@ -122,6 +122,9 @@ def cmd_dashboard(args):
     print("  Cloudflare IP Monitor - Web Dashboard")
     print("=" * 60)
     print(f"  Running at: http://localhost:{args.port}")
+    print(f"\n  Admin Login:")
+    print(f"    Username: {Config.ADMIN_USERNAME}")
+    print(f"    Password: {Config.ADMIN_PASSWORD}")
     print("=" * 60 + "\n")
 
     if not args.no_monitor:
@@ -165,6 +168,9 @@ def cmd_all(args):
     print(f"\nStarting dashboard and monitoring...")
     print(f"  - Dashboard: http://localhost:{args.port}")
     print(f"  - Monitor Interval: {args.interval} seconds")
+    print(f"\n  Admin Login:")
+    print(f"    Username: {Config.ADMIN_USERNAME}")
+    print(f"    Password: {Config.ADMIN_PASSWORD}")
 
     app.monitor.set_interval(args.interval)
     app.monitor.start(run_immediately=True)

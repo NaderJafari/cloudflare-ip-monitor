@@ -138,6 +138,7 @@
                 <button class="btn btn-secondary" onclick="testNow()">Test Now</button>
                 <button class="btn btn-danger" id="header-stop-scan-btn" onclick="stopCurrentScan()" style="display: none;">Stop Scan</button>
                 <button class="btn btn-primary" onclick="showScanModal()">Initial Scan</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/logout'">Logout</button>
             </div>
         </div>
     </header>
@@ -205,6 +206,7 @@
                 <div class="search-box">
                     <input type="text" class="search-input" id="search-input" placeholder="Search IP..." oninput="filterIPs()">
                     <select class="search-input" id="sort-select" onchange="sortIPs()">
+                        <option value="smart_score" selected>Sort: Smart Score</option>
                         <option value="avg_download_speed">Sort: Speed</option>
                         <option value="avg_latency">Sort: Latency</option>
                         <option value="avg_loss_rate">Sort: Loss Rate</option>
@@ -219,8 +221,9 @@
                 <div class="table-container">
                     <table id="ip-table">
                         <thead>
-                            <tr>
+                            <tr id="ip-table-head">
                                 <th>IP Address</th>
+                                <th>Score</th>
                                 <th>Avg Speed</th>
                                 <th>Best Speed</th>
                                 <th>Avg Latency</th>
@@ -328,7 +331,7 @@
     <div class="toast-container" id="toast-container"></div>
 
     <script>
-        let currentSort = 'avg_download_speed';
+        let currentSort = 'smart_score';
         let sortDir = 'DESC';
 
         function showToast(message, type) {
@@ -345,6 +348,10 @@
             options = options || {};
             try {
                 const response = await fetch(url, options);
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return null;
+                }
                 return await response.json();
             } catch (error) {
                 console.error('API Error:', error);
@@ -400,16 +407,24 @@
 
         function renderIPTable(ips) {
             const tbody = document.getElementById('ip-table-body');
+            const showScore = currentSort === 'smart_score';
+            const scoreHeader = document.getElementById('ip-table-head').children[1];
+            scoreHeader.style.display = showScore ? '' : 'none';
+            const colCount = showScore ? 10 : 9;
             if (ips.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="empty-state-icon">No Data</div><div>No IPs found. Run an initial scan.</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="' + colCount + '" class="empty-state"><div class="empty-state-icon">No Data</div><div>No IPs found. Run an initial scan.</div></td></tr>';
                 return;
             }
             tbody.innerHTML = ips.map(function(ip) {
                 const speedClass = ip.avg_download_speed >= 15 ? 'speed-good' : (ip.avg_download_speed >= 8 ? 'speed-medium' : 'speed-bad');
                 const lossClass = ip.avg_loss_rate <= 0.1 ? 'speed-good' : (ip.avg_loss_rate <= 0.25 ? 'speed-medium' : 'speed-bad');
                 const lastTested = ip.last_tested ? new Date(ip.last_tested).toLocaleString() : 'Never';
+                var scoreVal = ip.smart_score != null ? ip.smart_score : 0;
+                var scoreClass = scoreVal >= 0.7 ? 'speed-good' : (scoreVal >= 0.4 ? 'speed-medium' : 'speed-bad');
+                var scoreCell = showScore ? '<td class="' + scoreClass + '">' + (scoreVal * 100).toFixed(1) + '</td>' : '';
                 return '<tr>' +
                     '<td class="ip-cell" onclick="showIPDetails(\'' + ip.ip_address + '\')">' + ip.ip_address + '</td>' +
+                    scoreCell +
                     '<td class="' + speedClass + '">' + (ip.avg_download_speed || 0).toFixed(2) + '</td>' +
                     '<td class="' + speedClass + '">' + (ip.best_download_speed || 0).toFixed(2) + '</td>' +
                     '<td>' + (ip.avg_latency || 0).toFixed(0) + '</td>' +
@@ -510,7 +525,11 @@
         function filterIPs() { loadIPs(); }
         function sortIPs() {
             currentSort = document.getElementById('sort-select').value;
-            sortDir = (currentSort === 'avg_latency' || currentSort === 'avg_loss_rate') ? 'ASC' : 'DESC';
+            if (currentSort === 'smart_score') {
+                sortDir = 'DESC';
+            } else {
+                sortDir = (currentSort === 'avg_latency' || currentSort === 'avg_loss_rate') ? 'ASC' : 'DESC';
+            }
             loadIPs();
         }
 
