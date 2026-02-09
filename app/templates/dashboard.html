@@ -41,6 +41,7 @@
         .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
         .btn-secondary:hover { background: var(--border-color); }
         .btn-danger { background: var(--accent-danger); color: white; }
+        .btn-warning { background: var(--accent-warning); color: var(--bg-primary); }
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
 
         .main { max-width: 1600px; margin: 0 auto; padding: 2rem; }
@@ -56,7 +57,7 @@
         .panel-title { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
         .panel-body { padding: 1.5rem; }
 
-        .search-box { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .search-box { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
         .search-input { padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 0.875rem; width: 200px; font-family: inherit; }
         .search-input:focus { outline: none; border-color: var(--accent-primary); }
         .search-input::placeholder { color: var(--text-muted); }
@@ -113,6 +114,23 @@
 
         .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
         .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+        /* Story #6: Bulk select checkbox styling */
+        .bulk-cb { width: 16px; height: 16px; accent-color: var(--accent-primary); cursor: pointer; vertical-align: middle; }
+        .bulk-bar { display: none; gap: 0.75rem; align-items: center; padding: 0.75rem 1rem; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--accent-primary); }
+        .bulk-bar.visible { display: flex; }
+        .bulk-bar-text { font-size: 0.875rem; color: var(--text-secondary); }
+
+        /* Story #3: Date filter row */
+        .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; padding: 0 1.5rem 1rem; }
+
+        /* Toggle switch for Story #4 */
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); transition: 0.3s; border-radius: 22px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background: var(--text-muted); transition: 0.3s; border-radius: 50%; }
+        .toggle-switch input:checked + .toggle-slider { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); background: white; }
 
         @media (max-width: 768px) {
             .header { padding: 1rem; }
@@ -199,6 +217,44 @@
             </div>
         </div>
 
+        <!-- Story #4: Auto-Cleanup Config Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Auto-Cleanup Config</div>
+                <button class="btn btn-sm btn-secondary" onclick="loadCleanupConfig()">Reload</button>
+            </div>
+            <div class="panel-body">
+                <div class="ip-details-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="detail-item">
+                        <div class="detail-label">Zero-Speed Cleanup</div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+                            <label class="toggle-switch"><input type="checkbox" id="cleanup-enabled" onchange="saveCleanupConfig()"><span class="toggle-slider"></span></label>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Enabled</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Consecutive zero-speed tests</div>
+                        <input type="number" class="search-input" id="cleanup-no-speed-tests" value="10" min="1" style="width: 100%; margin-top: 0.5rem;" onchange="saveCleanupConfig()">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Min Speed Cleanup</div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+                            <label class="toggle-switch"><input type="checkbox" id="cleanup-min-speed-enabled" onchange="saveCleanupConfig()"><span class="toggle-slider"></span></label>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Enabled</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Min download speed (MB/s)</div>
+                        <input type="number" class="search-input" id="cleanup-min-speed" value="5" min="0" step="0.5" style="width: 100%; margin-top: 0.5rem;" onchange="saveCleanupConfig()">
+                    </div>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">
+                    These rules run automatically every ~24 test cycles. Zero-speed: deactivate IPs with 0 download in last N tests.
+                    Min-speed: deactivate IPs below threshold in their latest test result.
+                </p>
+            </div>
+        </div>
+
         <div class="panel">
             <div class="panel-header">
                 <div class="panel-title">IP Addresses</div>
@@ -211,15 +267,34 @@
                         <option value="total_tests">Sort: Tests</option>
                         <option value="last_tested">Sort: Last Tested</option>
                     </select>
+                    <!-- Story #3: Date filter -->
+                    <select class="search-input" id="date-filter-select" onchange="applyDateFilter()" style="width: auto;">
+                        <option value="">Filter: All Dates</option>
+                        <option value="1">Added: Last 24h</option>
+                        <option value="2">Added: Last 2 days</option>
+                        <option value="7">Added: Last week</option>
+                        <option value="14">Added: Last 2 weeks</option>
+                        <option value="30">Added: Last month</option>
+                    </select>
+                    <!-- Story #1 & #2: Clear test results -->
+                    <button class="btn btn-sm btn-warning" onclick="showClearResultsModal()" title="Clear test results for active IPs">Clear Results</button>
                     <button class="btn btn-sm btn-secondary" onclick="showCleanDeadModal()" title="Remove IPs with 0 download speed">Clean Dead IPs</button>
                     <button class="btn btn-sm btn-danger" onclick="deactivateAllIPs()" title="Deactivate all active IPs">Delete All</button>
                 </div>
             </div>
             <div class="panel-body">
+                <!-- Story #6: Bulk action bar -->
+                <div class="bulk-bar" id="bulk-bar">
+                    <span class="bulk-bar-text"><strong id="bulk-count">0</strong> IPs selected</span>
+                    <button class="btn btn-sm btn-danger" onclick="bulkDeactivate()">Delete Selected</button>
+                    <button class="btn btn-sm btn-secondary" onclick="clearBulkSelection()">Clear Selection</button>
+                </div>
                 <div class="table-container">
                     <table id="ip-table">
                         <thead>
                             <tr>
+                                <!-- Story #6: Bulk checkbox -->
+                                <th style="width: 40px; cursor: default;"><input type="checkbox" class="bulk-cb" id="select-all-cb" onchange="toggleSelectAll(this.checked)"></th>
                                 <th>IP Address</th>
                                 <th>Avg Speed</th>
                                 <th>Best Speed</th>
@@ -227,12 +302,14 @@
                                 <th>Best Latency</th>
                                 <th>Loss Rate</th>
                                 <th>Tests</th>
+                                <!-- Story #5: Date Added column -->
+                                <th>Date Added</th>
                                 <th>Last Tested</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="ip-table-body">
-                            <tr><td colspan="9" class="loading"><div class="spinner"></div>Loading...</td></tr>
+                            <tr><td colspan="11" class="loading"><div class="spinner"></div>Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -325,11 +402,49 @@
         </div>
     </div>
 
+    <!-- Story #1 & #2: Clear Test Results Modal -->
+    <div class="modal-overlay" id="clear-results-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Clear Test Results</div>
+                <button class="modal-close" onclick="closeClearResultsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                    Delete test results for all <strong>active</strong> IPs. Aggregate statistics will be recalculated after deletion.
+                </p>
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                        <input type="radio" name="clear-mode" value="all" checked onchange="toggleClearDateFields()"> All results
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                        <input type="radio" name="clear-mode" value="before" onchange="toggleClearDateFields()"> Older than...
+                    </label>
+                </div>
+                <div id="clear-date-group" style="opacity: 0.4; margin-bottom: 1rem;">
+                    <div class="detail-label" style="margin-bottom: 0.5rem;">Delete results older than</div>
+                    <select class="search-input" id="clear-date-select" style="width: 100%;" disabled>
+                        <option value="1">1 day ago</option>
+                        <option value="2">2 days ago</option>
+                        <option value="3">3 days ago</option>
+                        <option value="7" selected>1 week ago</option>
+                        <option value="14">2 weeks ago</option>
+                        <option value="30">1 month ago</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn btn-danger" onclick="executeClearResults()" style="flex: 1;">Clear Test Results</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container" id="toast-container"></div>
 
     <script>
         let currentSort = 'avg_download_speed';
         let sortDir = 'DESC';
+        var selectedIPs = new Set();
 
         function showToast(message, type) {
             type = type || 'success';
@@ -390,9 +505,17 @@
             }
         }
 
+        // Story #3: Build URL with date filter params
         async function loadIPs() {
             const search = document.getElementById('search-input').value;
-            const url = '/api/ips?sort=' + currentSort + '&dir=' + sortDir + (search ? '&search=' + encodeURIComponent(search) : '');
+            var url = '/api/ips?sort=' + currentSort + '&dir=' + sortDir;
+            if (search) url += '&search=' + encodeURIComponent(search);
+            var dateFilterDays = document.getElementById('date-filter-select').value;
+            if (dateFilterDays) {
+                var d = new Date();
+                d.setDate(d.getDate() - parseInt(dateFilterDays));
+                url += '&date_from=' + encodeURIComponent(d.toISOString());
+            }
             const data = await fetchAPI(url);
             if (!data) return;
             renderIPTable(data.ips || []);
@@ -401,14 +524,19 @@
         function renderIPTable(ips) {
             const tbody = document.getElementById('ip-table-body');
             if (ips.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="empty-state-icon">No Data</div><div>No IPs found. Run an initial scan.</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><div class="empty-state-icon">No Data</div><div>No IPs found. Run an initial scan.</div></td></tr>';
+                updateBulkBar();
                 return;
             }
             tbody.innerHTML = ips.map(function(ip) {
                 const speedClass = ip.avg_download_speed >= 15 ? 'speed-good' : (ip.avg_download_speed >= 8 ? 'speed-medium' : 'speed-bad');
                 const lossClass = ip.avg_loss_rate <= 0.1 ? 'speed-good' : (ip.avg_loss_rate <= 0.25 ? 'speed-medium' : 'speed-bad');
                 const lastTested = ip.last_tested ? new Date(ip.last_tested).toLocaleString() : 'Never';
+                // Story #5: Date Added
+                const dateAdded = ip.first_seen ? new Date(ip.first_seen).toLocaleDateString() : '-';
+                const isChecked = selectedIPs.has(ip.ip_address) ? ' checked' : '';
                 return '<tr>' +
+                    '<td><input type="checkbox" class="bulk-cb row-cb" data-ip="' + ip.ip_address + '"' + isChecked + ' onchange="onRowCheckChange(this)"></td>' +
                     '<td class="ip-cell" onclick="showIPDetails(\'' + ip.ip_address + '\')">' + ip.ip_address + '</td>' +
                     '<td class="' + speedClass + '">' + (ip.avg_download_speed || 0).toFixed(2) + '</td>' +
                     '<td class="' + speedClass + '">' + (ip.best_download_speed || 0).toFixed(2) + '</td>' +
@@ -416,10 +544,139 @@
                     '<td>' + (ip.best_latency || 0).toFixed(0) + '</td>' +
                     '<td class="' + lossClass + '">' + ((ip.avg_loss_rate || 0) * 100).toFixed(1) + '%</td>' +
                     '<td>' + (ip.total_tests || 0) + '</td>' +
+                    '<td style="font-size: 0.7rem;">' + dateAdded + '</td>' +
                     '<td style="font-size: 0.7rem;">' + lastTested + '</td>' +
                     '<td><button class="btn btn-sm btn-danger" onclick="deactivateIP(\'' + ip.ip_address + '\')">X</button></td>' +
                     '</tr>';
             }).join('');
+            updateBulkBar();
+        }
+
+        // Story #3: Date filter handler
+        function applyDateFilter() { loadIPs(); }
+
+        // ===== Story #6: Bulk Selection =====
+        function onRowCheckChange(cb) {
+            var ip = cb.getAttribute('data-ip');
+            if (cb.checked) { selectedIPs.add(ip); } else { selectedIPs.delete(ip); }
+            updateBulkBar();
+            updateSelectAllState();
+        }
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll('.row-cb').forEach(function(cb) {
+                cb.checked = checked;
+                var ip = cb.getAttribute('data-ip');
+                if (checked) { selectedIPs.add(ip); } else { selectedIPs.delete(ip); }
+            });
+            updateBulkBar();
+        }
+
+        function updateSelectAllState() {
+            var all = document.querySelectorAll('.row-cb');
+            var checked = document.querySelectorAll('.row-cb:checked');
+            var selectAllCb = document.getElementById('select-all-cb');
+            if (all.length === 0) { selectAllCb.checked = false; selectAllCb.indeterminate = false; return; }
+            if (checked.length === 0) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+            else if (checked.length === all.length) { selectAllCb.checked = true; selectAllCb.indeterminate = false; }
+            else { selectAllCb.checked = false; selectAllCb.indeterminate = true; }
+        }
+
+        function updateBulkBar() {
+            var bar = document.getElementById('bulk-bar');
+            var count = selectedIPs.size;
+            document.getElementById('bulk-count').textContent = count;
+            if (count > 0) { bar.classList.add('visible'); } else { bar.classList.remove('visible'); }
+        }
+
+        function clearBulkSelection() {
+            selectedIPs.clear();
+            document.querySelectorAll('.row-cb').forEach(function(cb) { cb.checked = false; });
+            document.getElementById('select-all-cb').checked = false;
+            document.getElementById('select-all-cb').indeterminate = false;
+            updateBulkBar();
+        }
+
+        async function bulkDeactivate() {
+            var count = selectedIPs.size;
+            if (count === 0) return;
+            if (!confirm('Deactivate ' + count + ' selected IPs?')) return;
+            var ipList = Array.from(selectedIPs);
+            var result = await fetchAPI('/api/ips/bulk-deactivate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ips: ipList })
+            });
+            if (result) {
+                showToast('Deactivated ' + result.count + ' IPs', 'success');
+                selectedIPs.clear();
+                refreshData();
+            }
+        }
+
+        // ===== Story #1 & #2: Clear Test Results =====
+        function showClearResultsModal() { document.getElementById('clear-results-modal').classList.add('active'); }
+        function closeClearResultsModal() { document.getElementById('clear-results-modal').classList.remove('active'); }
+
+        function toggleClearDateFields() {
+            var mode = document.querySelector('input[name="clear-mode"]:checked').value;
+            var group = document.getElementById('clear-date-group');
+            var sel = document.getElementById('clear-date-select');
+            if (mode === 'before') { group.style.opacity = '1'; sel.disabled = false; }
+            else { group.style.opacity = '0.4'; sel.disabled = true; }
+        }
+
+        async function executeClearResults() {
+            var mode = document.querySelector('input[name="clear-mode"]:checked').value;
+            var body = {};
+            var confirmMsg = 'Delete ALL test results for active IPs?';
+            if (mode === 'before') {
+                var days = parseInt(document.getElementById('clear-date-select').value);
+                var cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - days);
+                body.before = cutoff.toISOString();
+                confirmMsg = 'Delete test results older than ' + days + ' day(s) for active IPs?';
+            }
+            if (!confirm(confirmMsg)) return;
+            var result = await fetchAPI('/api/ips/clear-test-results', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            if (result && result.status === 'ok') {
+                showToast('Deleted ' + result.deleted + ' test results', 'success');
+                closeClearResultsModal();
+                refreshData();
+            } else if (result && result.error) {
+                showToast(result.error, 'error');
+            }
+        }
+
+        // ===== Story #4: Auto-Cleanup Config =====
+        async function loadCleanupConfig() {
+            var data = await fetchAPI('/api/cleanup/config');
+            if (!data) return;
+            document.getElementById('cleanup-enabled').checked = data.enabled;
+            document.getElementById('cleanup-no-speed-tests').value = data.no_speed_tests;
+            document.getElementById('cleanup-min-speed-enabled').checked = data.min_speed_enabled;
+            document.getElementById('cleanup-min-speed').value = data.min_speed;
+        }
+
+        async function saveCleanupConfig() {
+            var body = {
+                enabled: document.getElementById('cleanup-enabled').checked,
+                no_speed_tests: parseInt(document.getElementById('cleanup-no-speed-tests').value) || 10,
+                min_speed_enabled: document.getElementById('cleanup-min-speed-enabled').checked,
+                min_speed: parseFloat(document.getElementById('cleanup-min-speed').value) || 0
+            };
+            var result = await fetchAPI('/api/cleanup/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            if (result && result.status === 'updated') {
+                showToast('Cleanup config saved', 'success');
+            }
         }
 
         async function loadHourlyChart() {
@@ -453,7 +710,9 @@
                 '<div class="detail-item"><div class="detail-label">Avg Latency</div><div class="detail-value">' + (details.avg_latency || 0).toFixed(0) + ' ms</div></div>' +
                 '<div class="detail-item"><div class="detail-label">Best Latency</div><div class="detail-value">' + (details.best_latency || 0).toFixed(0) + ' ms</div></div>' +
                 '<div class="detail-item"><div class="detail-label">Avg Loss</div><div class="detail-value">' + ((details.avg_loss_rate || 0) * 100).toFixed(1) + '%</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Total Tests</div><div class="detail-value">' + (details.total_tests || 0) + '</div></div></div>';
+                '<div class="detail-item"><div class="detail-label">Total Tests</div><div class="detail-value">' + (details.total_tests || 0) + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Date Added</div><div class="detail-value" style="font-size: 0.9rem;">' + (details.first_seen ? new Date(details.first_seen).toLocaleDateString() : '-') + '</div></div>' +
+                '</div>';
             if (history && history.history && history.history.length > 0) {
                 html += '<h4 style="margin: 1rem 0 0.5rem;">Recent History (24h)</h4><div class="table-container"><table><thead><tr><th>Time</th><th>Speed</th><th>Latency</th><th>Loss</th></tr></thead><tbody>';
                 html += history.history.slice(0, 20).map(function(h) {
@@ -504,7 +763,7 @@
         async function deactivateIP(ip) {
             if (!confirm('Deactivate IP ' + ip + '?')) return;
             const result = await fetchAPI('/api/ip/deactivate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ip: ip}) });
-            if (result) { showToast('IP deactivated', 'success'); loadIPs(); loadStats(); }
+            if (result) { showToast('IP deactivated', 'success'); selectedIPs.delete(ip); loadIPs(); loadStats(); }
         }
 
         function filterIPs() { loadIPs(); }
@@ -609,7 +868,7 @@
             if (!confirm('Deactivate ALL active IPs? This cannot be undone.')) return;
             if (!confirm('Are you sure? Every active IP will be removed from the list.')) return;
             const result = await fetchAPI('/api/ips/deactivate-all', { method: 'POST' });
-            if (result) { showToast('Deactivated ' + result.count + ' IPs', 'success'); refreshData(); }
+            if (result) { showToast('Deactivated ' + result.count + ' IPs', 'success'); selectedIPs.clear(); refreshData(); }
         }
 
         function showCleanDeadModal() { document.getElementById('clean-dead-modal').classList.add('active'); updateCleanPreview(); }
@@ -667,7 +926,7 @@
         function refreshData() { loadStats(); loadIPs(); loadHourlyChart(); }
         setInterval(function() { loadStats(); }, 30000);
         setInterval(function() { loadIPs(); loadHourlyChart(); }, 120000);
-        document.addEventListener('DOMContentLoaded', function() { refreshData(); });
+        document.addEventListener('DOMContentLoaded', function() { refreshData(); loadCleanupConfig(); });
         document.querySelectorAll('.modal-overlay').forEach(function(modal) { modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); }); });
         document.addEventListener('keydown', function(e) { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(function(m) { m.classList.remove('active'); }); if (e.key === 'r' && document.activeElement.tagName !== 'INPUT') refreshData(); });
     </script>

@@ -73,12 +73,24 @@ def get_ips():
     order_dir = request.args.get("dir", "DESC").upper()
     search = request.args.get("search")
     active_only = request.args.get("active", "true").lower() == "true"
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
 
     query = IP.query
     if active_only:
         query = query.filter_by(is_active=True)
     if search:
         query = query.filter(IP.ip_address.like(f"%{search}%"))
+    if date_from:
+        try:
+            query = query.filter(IP.first_seen >= datetime.fromisoformat(date_from))
+        except (ValueError, TypeError):
+            pass
+    if date_to:
+        try:
+            query = query.filter(IP.first_seen <= datetime.fromisoformat(date_to))
+        except (ValueError, TypeError):
+            pass
 
     if order_by in VALID_SORT_COLUMNS:
         col = getattr(IP, order_by)
@@ -354,6 +366,129 @@ def deactivate_dead_ips():
         db.session.commit()
 
     return jsonify({"status": "deactivated", "count": count, "mode": mode, "value": value})
+
+
+@api_bp.route("/ips/clear-test-results", methods=["POST"])
+def clear_test_results():
+    """Delete all test results for active IPs and reset their aggregate stats.
+
+    Optionally accepts JSON body:
+        before: ISO date string – only delete results older than this date
+        If omitted, ALL test results for active IPs are deleted.
+    """
+    data = request.get_json(silent=True) or {}
+    before = data.get("before")
+
+    active_ids = [
+        row[0]
+        for row in db.session.query(IP.id).filter(IP.is_active == True).all()  # noqa: E712
+    ]
+
+    if not active_ids:
+        return jsonify({"status": "ok", "deleted": 0})
+
+    query = TestResult.query.filter(TestResult.ip_id.in_(active_ids))
+    if before:
+        try:
+            cutoff = datetime.fromisoformat(before)
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid date format. Use ISO format."}), 400
+        query = query.filter(TestResult.test_time < cutoff)
+
+    deleted = query.delete(synchronize_session=False)
+
+    # Recalculate aggregate stats for affected IPs
+    for ip_id in active_ids:
+        ip = IP.query.get(ip_id)
+        if not ip:
+            continue
+        stats = db.session.query(
+            func.avg(TestResult.latency_ms),
+            func.avg(TestResult.download_speed_mbps),
+            func.avg(TestResult.loss_rate),
+            func.min(TestResult.latency_ms),
+            func.max(TestResult.download_speed_mbps),
+            func.max(TestResult.latency_ms),
+            func.min(TestResult.download_speed_mbps),
+            func.count(TestResult.id),
+        ).filter(TestResult.ip_id == ip_id).first()
+
+        ip.avg_latency = stats[0]
+        ip.avg_download_speed = stats[1]
+        ip.avg_loss_rate = stats[2]
+        ip.best_latency = stats[3]
+        ip.best_download_speed = stats[4]
+        ip.worst_latency = stats[5]
+        ip.worst_download_speed = stats[6]
+        ip.total_tests = stats[7] or 0
+
+    db.session.commit()
+
+    return jsonify({"status": "ok", "deleted": deleted, "before": before})
+
+
+@api_bp.route("/ips/bulk-deactivate", methods=["POST"])
+def bulk_deactivate_ips():
+    """Deactivate multiple IPs at once.
+
+    Accepts JSON body:
+        ips: list of IP address strings
+    """
+    data = request.get_json(silent=True) or {}
+    ip_list = data.get("ips", [])
+    if not ip_list:
+        return jsonify({"error": "No IPs provided"}), 400
+
+    count = IP.query.filter(
+        IP.ip_address.in_(ip_list), IP.is_active == True  # noqa: E712
+    ).update({"is_active": False}, synchronize_session=False)
+    db.session.commit()
+
+    return jsonify({"status": "deactivated", "count": count})
+
+
+@api_bp.route("/cleanup/config")
+def get_cleanup_config():
+    """Return current auto-cleanup configuration."""
+    from app.config import Config
+
+    return jsonify({
+        "enabled": Config.CLEANUP["enabled"],
+        "no_speed_tests": Config.CLEANUP["no_speed_tests"],
+        "min_speed": Config.CLEANUP.get("min_speed", 0),
+        "min_speed_enabled": Config.CLEANUP.get("min_speed_enabled", False),
+    })
+
+
+@api_bp.route("/cleanup/config", methods=["POST"])
+def update_cleanup_config():
+    """Update auto-cleanup configuration at runtime.
+
+    Accepts JSON body with any of:
+        enabled: bool
+        no_speed_tests: int
+        min_speed: float
+        min_speed_enabled: bool
+    """
+    from app.config import Config
+
+    data = request.get_json(silent=True) or {}
+    if "enabled" in data:
+        Config.CLEANUP["enabled"] = bool(data["enabled"])
+    if "no_speed_tests" in data:
+        Config.CLEANUP["no_speed_tests"] = max(1, int(data["no_speed_tests"]))
+    if "min_speed" in data:
+        Config.CLEANUP["min_speed"] = max(0, float(data["min_speed"]))
+    if "min_speed_enabled" in data:
+        Config.CLEANUP["min_speed_enabled"] = bool(data["min_speed_enabled"])
+
+    return jsonify({
+        "status": "updated",
+        "enabled": Config.CLEANUP["enabled"],
+        "no_speed_tests": Config.CLEANUP["no_speed_tests"],
+        "min_speed": Config.CLEANUP.get("min_speed", 0),
+        "min_speed_enabled": Config.CLEANUP.get("min_speed_enabled", False),
+    })
 
 
 @api_bp.route("/ips/preview-dead")

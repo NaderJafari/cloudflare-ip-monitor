@@ -149,3 +149,38 @@ def cleanup_dead_ips(no_speed_tests=10):
         )
 
     return count
+
+
+def cleanup_slow_ips(min_speed):
+    """Deactivate active IPs whose last test download speed is below *min_speed*.
+
+    Only examines the single most-recent test result for each active IP.
+    """
+    slow_ids = db.session.execute(
+        text("""
+            SELECT ip_id FROM (
+                SELECT ip_id, download_speed_mbps,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ip_id ORDER BY test_time DESC
+                    ) AS rn
+                FROM test_results
+                WHERE ip_id IN (SELECT id FROM ips WHERE is_active = 1)
+            )
+            WHERE rn = 1 AND download_speed_mbps < :min_speed
+        """),
+        {"min_speed": min_speed},
+    ).fetchall()
+
+    ids = [row[0] for row in slow_ids]
+    count = 0
+    if ids:
+        count = IP.query.filter(IP.id.in_(ids)).update(
+            {"is_active": False}, synchronize_session=False
+        )
+        db.session.commit()
+        logger.info(
+            f"Auto-cleanup deactivated {count} IPs with download speed "
+            f"below {min_speed} MB/s in last test"
+        )
+
+    return count

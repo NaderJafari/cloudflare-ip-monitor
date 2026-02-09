@@ -5,7 +5,12 @@ from datetime import datetime
 from typing import Callable, List, Optional
 
 from app.config import Config
-from app.services.ip_service import cleanup_dead_ips, cleanup_old_data, get_active_ips
+from app.services.ip_service import (
+    cleanup_dead_ips,
+    cleanup_old_data,
+    cleanup_slow_ips,
+    get_active_ips,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +94,8 @@ class PeriodicMonitor:
                 cleanup_old_data(Config.RETENTION_DAYS)
                 if Config.CLEANUP["enabled"]:
                     cleanup_dead_ips(Config.CLEANUP["no_speed_tests"])
+                if Config.CLEANUP.get("min_speed_enabled") and Config.CLEANUP.get("min_speed", 0) > 0:
+                    cleanup_slow_ips(Config.CLEANUP["min_speed"])
         except Exception as e:
             logger.error(f"Cleanup failed: {e}")
 

@@ -84,6 +84,9 @@ class Config:
     CLEANUP = {
         "enabled": _env("CLEANUP_ENABLED", "true").lower() in ("true", "1", "yes"),
         "no_speed_tests": _env("CLEANUP_NO_SPEED_TESTS", 10, int),
+        "min_speed": _env("CLEANUP_MIN_SPEED", 0, float),
+        "min_speed_enabled": _env("CLEANUP_MIN_SPEED_ENABLED", "false").lower()
+        in ("true", "1", "yes"),
     }
 
     # Dashboard
