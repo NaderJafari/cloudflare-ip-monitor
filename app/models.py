@@ -3,6 +3,16 @@ from datetime import datetime, timezone
 from app.extensions import db
 
 
+def _utc_iso(dt):
+    """Return ISO format string with Z suffix for UTC datetimes."""
+    if dt is None:
+        return None
+    s = dt.isoformat()
+    if not s.endswith("Z") and "+" not in s:
+        s += "Z"
+    return s
+
+
 class IP(db.Model):
     __tablename__ = "ips"
 
@@ -31,8 +41,8 @@ class IP(db.Model):
         return {
             "id": self.id,
             "ip_address": self.ip_address,
-            "first_seen": self.first_seen.isoformat() if self.first_seen else None,
-            "last_tested": self.last_tested.isoformat() if self.last_tested else None,
+            "first_seen": _utc_iso(self.first_seen),
+            "last_tested": _utc_iso(self.last_tested),
             "is_active": self.is_active,
             "total_tests": self.total_tests,
             "avg_latency": self.avg_latency,
@@ -44,7 +54,7 @@ class IP(db.Model):
             "worst_latency": self.worst_latency,
             "worst_download_speed": self.worst_download_speed,
             "colo_code": self.colo_code,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": _utc_iso(self.created_at),
         }
 
 
@@ -74,7 +84,7 @@ class TestResult(db.Model):
         return {
             "id": self.id,
             "ip_id": self.ip_id,
-            "test_time": self.test_time.isoformat() if self.test_time else None,
+            "test_time": _utc_iso(self.test_time),
             "latency_ms": self.latency_ms,
             "download_speed_mbps": self.download_speed_mbps,
             "upload_speed_mbps": self.upload_speed_mbps,
@@ -102,7 +112,7 @@ class ScanSession(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "scan_time": self.scan_time.isoformat() if self.scan_time else None,
+            "scan_time": _utc_iso(self.scan_time),
             "total_ips_tested": self.total_ips_tested,
             "ips_passed": self.ips_passed,
             "min_speed_threshold": self.min_speed_threshold,

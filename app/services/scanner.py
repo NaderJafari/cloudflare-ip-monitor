@@ -10,7 +10,7 @@ import urllib.request
 import uuid
 import zipfile
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -605,7 +605,7 @@ class CloudflareScanner:
                 status = meta.get("status", "unknown")
                 if status == "completed":
                     self._schedule_scan_count += 1
-                    self._schedule_last_run = datetime.now().isoformat()
+                    self._schedule_last_run = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
                     logger.info(
                         f"Scheduled scan completed "
                         f"(total completed: {self._schedule_scan_count})"

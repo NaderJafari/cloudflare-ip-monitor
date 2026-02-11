@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable, List, Optional
 
 from app.config import Config
@@ -71,7 +71,7 @@ class PeriodicMonitor:
             "ips_total": total_ips,
             "ips_responded": 0,
             "ips_failed": 0,
-            "started_at": datetime.now().isoformat(),
+            "started_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "elapsed_seconds": 0,
         }
 
@@ -81,9 +81,10 @@ class PeriodicMonitor:
         self._cycle_progress["ips_responded"] += responded
         self._cycle_progress["ips_failed"] += failed
         if self._cycle_progress["started_at"]:
-            start = datetime.fromisoformat(self._cycle_progress["started_at"])
+            started_str = self._cycle_progress["started_at"].replace("Z", "+00:00")
+            start = datetime.fromisoformat(started_str)
             self._cycle_progress["elapsed_seconds"] = round(
-                (datetime.now() - start).total_seconds(), 1
+                (datetime.now(timezone.utc) - start).total_seconds(), 1
             )
 
     def _finish_progress(self):
@@ -167,7 +168,7 @@ class PeriodicMonitor:
                     break
 
             cycle_duration = round(time.time() - cycle_start, 2)
-            self._last_test_time = datetime.now()
+            self._last_test_time = datetime.now(timezone.utc)
             self._test_count += 1
             self._finish_progress()
 
@@ -183,7 +184,7 @@ class PeriodicMonitor:
 
             summary = {
                 "cycle_number": self._test_count,
-                "timestamp": self._last_test_time.isoformat(),
+                "timestamp": self._last_test_time.isoformat().replace("+00:00", "Z"),
                 "duration_seconds": cycle_duration,
                 "ips_total": total,
                 "ips_responded": total_responded,
@@ -287,7 +288,9 @@ class PeriodicMonitor:
             "is_paused": self._is_paused,
             "interval_seconds": self.interval,
             "last_test_time": (
-                self._last_test_time.isoformat() if self._last_test_time else None
+                self._last_test_time.isoformat().replace("+00:00", "Z")
+                if self._last_test_time
+                else None
             ),
             "test_count": self._test_count,
             "next_test_in": self._calculate_next_test(),
@@ -306,7 +309,7 @@ class PeriodicMonitor:
     def _calculate_next_test(self) -> Optional[int]:
         if not self._is_running or not self._last_test_time:
             return None
-        elapsed = (datetime.now() - self._last_test_time).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - self._last_test_time).total_seconds()
         return max(0, int(self.interval - elapsed))
 
     def set_interval(self, seconds: int):
