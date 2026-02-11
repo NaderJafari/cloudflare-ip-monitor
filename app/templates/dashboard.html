@@ -33,7 +33,8 @@
         .logo { display: flex; align-items: center; gap: 0.75rem; }
         .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
         .logo-text { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-primary), var(--text-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .header-clock { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 0.4rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); white-space: nowrap; }
 
         .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit; }
         .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: var(--bg-primary); }
@@ -152,6 +153,7 @@
                 <span class="logo-text">CF IP Monitor</span>
             </div>
             <div class="header-actions">
+                <span class="header-clock" id="header-clock"></span>
                 <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
                 <button class="btn btn-secondary" onclick="testNow()">Test Now</button>
                 <button class="btn btn-danger" id="header-stop-scan-btn" onclick="stopCurrentScan()" style="display: none;">Stop Scan</button>
@@ -446,6 +448,35 @@
         let sortDir = 'DESC';
         var selectedIPs = new Set();
 
+        // Relative time helper: returns "just now", "1 minute ago", "3 hours ago", etc.
+        function timeAgo(dateStr) {
+            if (!dateStr) return '-';
+            var now = new Date();
+            var d = new Date(dateStr);
+            var diffMs = now - d;
+            if (diffMs < 0) return 'just now';
+            var sec = Math.floor(diffMs / 1000);
+            if (sec < 60) return 'just now';
+            var min = Math.floor(sec / 60);
+            if (min < 60) return min + (min === 1 ? ' minute ago' : ' minutes ago');
+            var hr = Math.floor(min / 60);
+            if (hr < 24) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
+            var day = Math.floor(hr / 24);
+            if (day < 30) return day + (day === 1 ? ' day ago' : ' days ago');
+            var month = Math.floor(day / 30);
+            if (month < 12) return month + (month === 1 ? ' month ago' : ' months ago');
+            var year = Math.floor(month / 12);
+            return year + (year === 1 ? ' year ago' : ' years ago');
+        }
+
+        // Live header clock
+        function updateHeaderClock() {
+            var el = document.getElementById('header-clock');
+            if (el) el.textContent = new Date().toLocaleString();
+        }
+        updateHeaderClock();
+        setInterval(updateHeaderClock, 1000);
+
         function showToast(message, type) {
             type = type || 'success';
             const container = document.getElementById('toast-container');
@@ -531,9 +562,11 @@
             tbody.innerHTML = ips.map(function(ip) {
                 const speedClass = ip.avg_download_speed >= 15 ? 'speed-good' : (ip.avg_download_speed >= 8 ? 'speed-medium' : 'speed-bad');
                 const lossClass = ip.avg_loss_rate <= 0.1 ? 'speed-good' : (ip.avg_loss_rate <= 0.25 ? 'speed-medium' : 'speed-bad');
-                const lastTested = ip.last_tested ? new Date(ip.last_tested).toLocaleString() : 'Never';
+                const lastTestedAgo = ip.last_tested ? timeAgo(ip.last_tested) : 'Never';
+                const lastTestedFull = ip.last_tested ? new Date(ip.last_tested).toLocaleString() : '';
                 // Story #5: Date Added
-                const dateAdded = ip.first_seen ? new Date(ip.first_seen).toLocaleDateString() : '-';
+                const dateAddedAgo = ip.first_seen ? timeAgo(ip.first_seen) : '-';
+                const dateAddedFull = ip.first_seen ? new Date(ip.first_seen).toLocaleString() : '';
                 const isChecked = selectedIPs.has(ip.ip_address) ? ' checked' : '';
                 return '<tr>' +
                     '<td><input type="checkbox" class="bulk-cb row-cb" data-ip="' + ip.ip_address + '"' + isChecked + ' onchange="onRowCheckChange(this)"></td>' +
@@ -544,8 +577,8 @@
                     '<td>' + (ip.best_latency || 0).toFixed(0) + '</td>' +
                     '<td class="' + lossClass + '">' + ((ip.avg_loss_rate || 0) * 100).toFixed(1) + '%</td>' +
                     '<td>' + (ip.total_tests || 0) + '</td>' +
-                    '<td style="font-size: 0.7rem;">' + dateAdded + '</td>' +
-                    '<td style="font-size: 0.7rem;">' + lastTested + '</td>' +
+                    '<td style="font-size: 0.7rem;" title="' + dateAddedFull + '">' + dateAddedAgo + '</td>' +
+                    '<td style="font-size: 0.7rem;" title="' + lastTestedFull + '">' + lastTestedAgo + '</td>' +
                     '<td><button class="btn btn-sm btn-danger" onclick="deactivateIP(\'' + ip.ip_address + '\')">X</button></td>' +
                     '</tr>';
             }).join('');
@@ -711,12 +744,12 @@
                 '<div class="detail-item"><div class="detail-label">Best Latency</div><div class="detail-value">' + (details.best_latency || 0).toFixed(0) + ' ms</div></div>' +
                 '<div class="detail-item"><div class="detail-label">Avg Loss</div><div class="detail-value">' + ((details.avg_loss_rate || 0) * 100).toFixed(1) + '%</div></div>' +
                 '<div class="detail-item"><div class="detail-label">Total Tests</div><div class="detail-value">' + (details.total_tests || 0) + '</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Date Added</div><div class="detail-value" style="font-size: 0.9rem;">' + (details.first_seen ? new Date(details.first_seen).toLocaleDateString() : '-') + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Date Added</div><div class="detail-value" style="font-size: 0.9rem;" title="' + (details.first_seen ? new Date(details.first_seen).toLocaleString() : '') + '">' + timeAgo(details.first_seen) + '</div></div>' +
                 '</div>';
             if (history && history.history && history.history.length > 0) {
                 html += '<h4 style="margin: 1rem 0 0.5rem;">Recent History (24h)</h4><div class="table-container"><table><thead><tr><th>Time</th><th>Speed</th><th>Latency</th><th>Loss</th></tr></thead><tbody>';
                 html += history.history.slice(0, 20).map(function(h) {
-                    return '<tr><td style="font-size: 0.75rem;">' + new Date(h.test_time).toLocaleString() + '</td><td>' + (h.download_speed_mbps || 0).toFixed(2) + '</td><td>' + (h.latency_ms || 0).toFixed(0) + '</td><td>' + ((h.loss_rate || 0) * 100).toFixed(1) + '%</td></tr>';
+                    return '<tr><td style="font-size: 0.75rem;" title="' + new Date(h.test_time).toLocaleString() + '">' + timeAgo(h.test_time) + '</td><td>' + (h.download_speed_mbps || 0).toFixed(2) + '</td><td>' + (h.latency_ms || 0).toFixed(0) + '</td><td>' + ((h.loss_rate || 0) * 100).toFixed(1) + '%</td></tr>';
                 }).join('');
                 html += '</tbody></table></div>';
             }
