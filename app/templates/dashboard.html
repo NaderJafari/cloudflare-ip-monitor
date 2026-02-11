@@ -23,125 +23,168 @@
             --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font-sans); background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; line-height: 1.6; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        body { font-family: var(--font-sans); background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; line-height: 1.5; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-secondary); }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 
-        .header { background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); border-bottom: 1px solid var(--border-color); padding: 1.5rem 2rem; position: sticky; top: 0; z-index: 100; }
-        .header-content { max-width: 1600px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-        .logo { display: flex; align-items: center; gap: 0.75rem; }
-        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
-        .logo-text { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-primary), var(--text-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
-        .header-clock { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 0.4rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); white-space: nowrap; }
+        /* ===== Header ===== */
+        .header { background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1.5rem; position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1800px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; }
+        .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .logo-text { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-primary), var(--text-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .header-clock { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); white-space: nowrap; }
 
-        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit; }
+        /* ===== Buttons ===== */
+        .btn { padding: 0.4rem 0.9rem; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; font-family: inherit; }
         .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: var(--bg-primary); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0, 212, 170, 0.3); }
         .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
         .btn-secondary:hover { background: var(--border-color); }
         .btn-danger { background: var(--accent-danger); color: white; }
         .btn-warning { background: var(--accent-warning); color: var(--bg-primary); }
-        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+        .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.7rem; }
+        .btn-xs { padding: 0.15rem 0.45rem; font-size: 0.65rem; border-radius: 4px; }
 
-        .main { max-width: 1600px; margin: 0 auto; padding: 2rem; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
-        .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; transition: all 0.3s ease; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--accent-primary); }
-        .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
-        .stat-value { font-size: 1.75rem; font-weight: 700; font-family: var(--font-mono); color: var(--accent-primary); }
-        .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        /* ===== Main ===== */
+        .main { max-width: 1800px; margin: 0 auto; padding: 1rem 1.5rem; }
 
-        .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; }
-        .panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-secondary); }
-        .panel-title { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
-        .panel-body { padding: 1.5rem; }
+        /* ===== Stats Strip ===== */
+        .stats-strip { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .stat-chip { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.9rem; display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 130px; transition: border-color 0.2s; }
+        .stat-chip:hover { border-color: var(--accent-primary); }
+        .stat-chip-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+        .stat-chip-value { font-size: 1.1rem; font-weight: 700; font-family: var(--font-mono); color: var(--accent-primary); line-height: 1; }
+        .stat-chip-unit { font-size: 0.6rem; color: var(--text-secondary); }
 
-        .search-box { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
-        .search-input { padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 0.875rem; width: 200px; font-family: inherit; }
+        /* ===== Two-Column Grid ===== */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+
+        /* ===== Panels ===== */
+        .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 0.75rem; overflow: hidden; }
+        .panel-header { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; background: var(--bg-secondary); min-height: 0; }
+        .panel-title { font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; }
+        .panel-badge { font-size: 0.65rem; background: var(--accent-primary); color: var(--bg-primary); padding: 0.1rem 0.45rem; border-radius: 10px; font-weight: 600; }
+        .panel-body { padding: 0.75rem 1rem; }
+        .panel-body-flush { padding: 0; }
+
+        /* ===== Collapsible ===== */
+        .panel-toggle { cursor: pointer; user-select: none; }
+        .panel-toggle .chevron { display: inline-block; transition: transform 0.2s; font-size: 0.7rem; color: var(--text-muted); margin-left: 0.3rem; }
+        .panel-toggle.collapsed .chevron { transform: rotate(-90deg); }
+        .panel-collapsible { overflow: hidden; transition: max-height 0.3s ease, opacity 0.2s ease; max-height: 2000px; opacity: 1; }
+        .panel-collapsible.collapsed { max-height: 0; opacity: 0; }
+
+        /* ===== Search / Inputs ===== */
+        .search-box { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .search-input { padding: 0.35rem 0.7rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 0.8rem; width: 160px; font-family: inherit; }
         .search-input:focus { outline: none; border-color: var(--accent-primary); }
         .search-input::placeholder { color: var(--text-muted); }
         select.search-input { cursor: pointer; width: auto; }
 
+        /* ===== Tables ===== */
         .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        th, td { padding: 0.875rem 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { background: var(--bg-secondary); font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th, td { padding: 0.5rem 0.65rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--bg-secondary); font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.3px; cursor: pointer; white-space: nowrap; position: sticky; top: 0; }
         th:hover { color: var(--accent-primary); }
-        tr:hover td { background: var(--bg-secondary); }
-        td { font-family: var(--font-mono); font-size: 0.8rem; }
+        tr:hover td { background: rgba(0, 212, 170, 0.03); }
+        td { font-family: var(--font-mono); font-size: 0.75rem; }
         .ip-cell { color: var(--accent-primary); cursor: pointer; }
         .ip-cell:hover { text-decoration: underline; }
         .speed-good { color: var(--accent-primary); }
         .speed-medium { color: var(--accent-warning); }
         .speed-bad { color: var(--accent-danger); }
 
-        .monitor-status { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-        .status-indicator { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--bg-tertiary); border-radius: 8px; font-size: 0.875rem; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; animation: pulse 2s infinite; }
+        /* ===== Monitor Status ===== */
+        .monitor-status { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .status-indicator { display: flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.75rem; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
         .status-dot.running { background: var(--accent-primary); }
         .status-dot.stopped { background: var(--accent-danger); animation: none; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 90%; max-width: 800px; max-height: 80vh; overflow: hidden; transform: scale(0.9); transition: transform 0.3s ease; }
-        .modal-overlay.active .modal { transform: scale(1); }
-        .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); }
-        .modal-title { font-size: 1.125rem; font-weight: 600; }
-        .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; line-height: 1; }
-        .modal-close:hover { color: var(--accent-danger); }
-        .modal-body { padding: 1.5rem; max-height: 60vh; overflow-y: auto; }
+        .monitor-meta { font-size: 0.7rem; color: var(--text-muted); }
 
-        .chart-container { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; margin-top: 1rem; }
-        .chart-bar { flex: 1; background: linear-gradient(to top, var(--accent-primary), var(--accent-secondary)); border-radius: 4px 4px 0 0; min-height: 4px; transition: all 0.3s ease; }
+        /* ===== Modals ===== */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.25s ease; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; overflow: hidden; transform: scale(0.95); transition: transform 0.25s ease; }
+        .modal-overlay.active .modal { transform: scale(1); }
+        .modal-header { padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); }
+        .modal-title { font-size: 1rem; font-weight: 600; }
+        .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.3rem; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: var(--accent-danger); }
+        .modal-body { padding: 1.2rem; max-height: 60vh; overflow-y: auto; }
+
+        /* ===== Chart ===== */
+        .chart-container { height: 120px; display: flex; align-items: flex-end; gap: 3px; padding: 0.75rem; background: var(--bg-secondary); border-radius: 6px; }
+        .chart-bar { flex: 1; background: linear-gradient(to top, var(--accent-primary), var(--accent-secondary)); border-radius: 3px 3px 0 0; min-height: 3px; transition: all 0.3s ease; }
         .chart-bar:hover { opacity: 0.8; }
 
-        .ip-details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .detail-item { background: var(--bg-secondary); padding: 1rem; border-radius: 8px; }
-        .detail-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
-        .detail-value { font-size: 1.25rem; font-weight: 600; font-family: var(--font-mono); }
+        /* ===== Detail Grid ===== */
+        .ip-details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+        .detail-item { background: var(--bg-secondary); padding: 0.75rem; border-radius: 6px; }
+        .detail-label { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.2rem; }
+        .detail-value { font-size: 1.1rem; font-weight: 600; font-family: var(--font-mono); }
 
-        .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
-        .spinner { width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        /* ===== Loading ===== */
+        .loading { text-align: center; padding: 2rem; color: var(--text-muted); }
+        .spinner { width: 28px; height: 28px; border: 2px solid var(--border-color); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 0.5rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 2000; }
-        .toast { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.25rem; margin-top: 0.5rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease; min-width: 250px; }
+        /* ===== Toasts ===== */
+        .toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 2000; }
+        .toast { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.7rem 1rem; margin-top: 0.4rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 0.5rem; animation: slideIn 0.3s ease; min-width: 220px; font-size: 0.8rem; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
         .toast.success { border-left: 3px solid var(--accent-primary); }
         .toast.error { border-left: 3px solid var(--accent-danger); }
 
-        .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
-        .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
 
-        /* Story #6: Bulk select checkbox styling */
-        .bulk-cb { width: 16px; height: 16px; accent-color: var(--accent-primary); cursor: pointer; vertical-align: middle; }
-        .bulk-bar { display: none; gap: 0.75rem; align-items: center; padding: 0.75rem 1rem; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--accent-primary); }
+        /* ===== Bulk select ===== */
+        .bulk-cb { width: 14px; height: 14px; accent-color: var(--accent-primary); cursor: pointer; vertical-align: middle; }
+        .bulk-bar { display: none; gap: 0.5rem; align-items: center; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid var(--accent-primary); font-size: 0.8rem; }
         .bulk-bar.visible { display: flex; }
-        .bulk-bar-text { font-size: 0.875rem; color: var(--text-secondary); }
 
-        /* Story #3: Date filter row */
-        .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; padding: 0 1.5rem 1rem; }
-
-        /* Toggle switch for Story #4 */
-        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        /* ===== Toggle switch ===== */
+        .toggle-switch { position: relative; display: inline-block; width: 34px; height: 18px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); transition: 0.3s; border-radius: 22px; }
-        .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background: var(--text-muted); transition: 0.3s; border-radius: 50%; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-tertiary); border: 1px solid var(--border-color); transition: 0.3s; border-radius: 18px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background: var(--text-muted); transition: 0.3s; border-radius: 50%; }
         .toggle-switch input:checked + .toggle-slider { background: var(--accent-primary); border-color: var(--accent-primary); }
-        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); background: white; }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(16px); background: white; }
 
+        /* ===== Inline cleanup config ===== */
+        .config-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; font-size: 0.8rem; padding: 0.5rem 0; }
+        .config-row label { display: flex; align-items: center; gap: 0.4rem; color: var(--text-secondary); }
+        .config-row .search-input { width: 70px; padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+
+        /* ===== Progress bar inline ===== */
+        .progress-strip { padding: 0.5rem 1rem; background: var(--bg-tertiary); border-top: 1px solid var(--border-color); }
+        .progress-track { height: 4px; background: var(--bg-primary); border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius: 2px; transition: width 0.3s ease; width: 0%; }
+        .progress-info { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        /* ===== Last cycle inline ===== */
+        .last-cycle-strip { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.7rem; padding: 0.4rem 1rem; border-top: 1px solid var(--border-color); }
+        .last-cycle-strip span { white-space: nowrap; }
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
         @media (max-width: 768px) {
-            .header { padding: 1rem; }
-            .main { padding: 1rem; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .header { padding: 0.5rem 0.75rem; }
+            .main { padding: 0.75rem; }
+            .stats-strip { gap: 0.35rem; }
+            .stat-chip { min-width: 100px; padding: 0.35rem 0.6rem; }
             .panel-header { flex-direction: column; align-items: stretch; }
             .search-box { width: 100%; }
             .search-input { width: 100%; }
-            table { font-size: 0.75rem; }
-            th, td { padding: 0.5rem; }
+            table { font-size: 0.7rem; }
+            th, td { padding: 0.35rem 0.4rem; }
         }
     </style>
 </head>
@@ -154,70 +197,85 @@
             </div>
             <div class="header-actions">
                 <span class="header-clock" id="header-clock"></span>
-                <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
-                <button class="btn btn-secondary" onclick="testNow()">Test Now</button>
-                <button class="btn btn-danger" id="header-stop-scan-btn" onclick="stopCurrentScan()" style="display: none;">Stop Scan</button>
-                <button class="btn btn-primary" onclick="showScanModal()">Initial Scan</button>
+                <button class="btn btn-secondary btn-sm" onclick="refreshData()">Refresh</button>
+                <button class="btn btn-secondary btn-sm" onclick="testNow()">Test Now</button>
+                <button class="btn btn-danger btn-sm" id="header-stop-scan-btn" onclick="stopCurrentScan()" style="display: none;">Stop Scan</button>
+                <button class="btn btn-primary btn-sm" onclick="showScanModal()">Initial Scan</button>
             </div>
         </div>
     </header>
 
     <main class="main">
-        <div class="stats-grid" id="stats-grid">
-            <div class="stat-card"><div class="stat-label">Active IPs</div><div class="stat-value" id="stat-active-ips">-</div></div>
-            <div class="stat-card"><div class="stat-label">Total Tests</div><div class="stat-value" id="stat-total-tests">-</div></div>
-            <div class="stat-card"><div class="stat-label">Avg Speed</div><div class="stat-value" id="stat-avg-speed">-</div><div class="stat-sub">MB/s</div></div>
-            <div class="stat-card"><div class="stat-label">Best Speed</div><div class="stat-value" id="stat-best-speed">-</div><div class="stat-sub">MB/s</div></div>
-            <div class="stat-card"><div class="stat-label">Avg Latency</div><div class="stat-value" id="stat-avg-latency">-</div><div class="stat-sub">ms</div></div>
-            <div class="stat-card"><div class="stat-label">Best Latency</div><div class="stat-value" id="stat-best-latency">-</div><div class="stat-sub">ms</div></div>
+        <!-- Stats Strip -->
+        <div class="stats-strip">
+            <div class="stat-chip">
+                <div><div class="stat-chip-label">Active IPs</div><div class="stat-chip-value" id="stat-active-ips">-</div></div>
+            </div>
+            <div class="stat-chip">
+                <div><div class="stat-chip-label">Total Tests</div><div class="stat-chip-value" id="stat-total-tests">-</div></div>
+            </div>
+            <div class="stat-chip">
+                <div><div class="stat-chip-label">Avg Speed</div><div class="stat-chip-value"><span id="stat-avg-speed">-</span> <span class="stat-chip-unit">MB/s</span></div></div>
+            </div>
+            <div class="stat-chip">
+                <div><div class="stat-chip-label">Best Speed</div><div class="stat-chip-value"><span id="stat-best-speed">-</span> <span class="stat-chip-unit">MB/s</span></div></div>
+            </div>
+            <div class="stat-chip">
+                <div><div class="stat-chip-label">Avg Latency</div><div class="stat-chip-value"><span id="stat-avg-latency">-</span> <span class="stat-chip-unit">ms</span></div></div>
+            </div>
+            <div class="stat-chip">
+                <div><div class="stat-chip-label">Best Latency</div><div class="stat-chip-value"><span id="stat-best-latency">-</span> <span class="stat-chip-unit">ms</span></div></div>
+            </div>
         </div>
 
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">Monitor Status</div>
-                <div class="monitor-status">
-                    <div class="status-indicator">
-                        <div class="status-dot" id="monitor-dot"></div>
-                        <span id="monitor-status-text">Loading...</span>
-                    </div>
-                    <span id="monitor-interval" style="color: var(--text-muted); font-size: 0.875rem;"></span>
-                    <span id="monitor-next" style="color: var(--text-muted); font-size: 0.875rem;"></span>
-                    <span id="monitor-batch-info" style="color: var(--text-muted); font-size: 0.875rem;"></span>
-                    <button class="btn btn-sm btn-secondary" id="monitor-toggle-btn" onclick="toggleMonitor()">Start</button>
-                    <button class="btn btn-sm btn-warning" id="monitor-pause-btn" onclick="pauseMonitor()" style="display: none;">Pause</button>
-                    <button class="btn btn-sm btn-primary" id="monitor-resume-btn" onclick="resumeMonitor()" style="display: none;">Resume</button>
-                    <select class="search-input" id="interval-select" onchange="setMonitorInterval(this.value)" style="width: auto;">
-                        <option value="60">1 min</option>
-                        <option value="120" selected>2 min</option>
-                        <option value="300">5 min</option>
-                        <option value="600">10 min</option>
-                        <option value="1800">30 min</option>
-                        <option value="3600">1 hour</option>
-                    </select>
-                </div>
-            </div>
-            <!-- Live cycle progress bar -->
-            <div id="cycle-progress-container" style="display: none;">
-                <div style="padding: 0.75rem 1.5rem; background: var(--bg-tertiary); border-top: 1px solid var(--border-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.8rem; color: var(--text-secondary);" id="cycle-progress-text">Testing...</span>
-                        <span style="font-size: 0.8rem; color: var(--text-muted);" id="cycle-progress-elapsed"></span>
-                    </div>
-                    <div style="height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden;">
-                        <div id="cycle-progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius: 3px; transition: width 0.3s ease; width: 0%;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 0.4rem; font-size: 0.7rem; color: var(--text-muted);">
-                        <span id="cycle-progress-responded">Responded: 0</span>
-                        <span id="cycle-progress-failed" style="color: var(--accent-danger);">Failed: 0</span>
-                        <span id="cycle-progress-batch">Batch: 0/0</span>
+        <!-- Monitor + Scan side-by-side -->
+        <div class="grid-2">
+            <!-- Monitor Status -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Monitor</div>
+                    <div class="monitor-status">
+                        <div class="status-indicator">
+                            <div class="status-dot" id="monitor-dot"></div>
+                            <span id="monitor-status-text">Loading...</span>
+                        </div>
+                        <span class="monitor-meta" id="monitor-interval"></span>
+                        <span class="monitor-meta" id="monitor-next"></span>
+                        <span class="monitor-meta" id="monitor-batch-info"></span>
+                        <button class="btn btn-xs btn-secondary" id="monitor-toggle-btn" onclick="toggleMonitor()">Start</button>
+                        <button class="btn btn-xs btn-warning" id="monitor-pause-btn" onclick="pauseMonitor()" style="display: none;">Pause</button>
+                        <button class="btn btn-xs btn-primary" id="monitor-resume-btn" onclick="resumeMonitor()" style="display: none;">Resume</button>
+                        <select class="search-input" id="interval-select" onchange="setMonitorInterval(this.value)" style="width: auto; padding: 0.2rem 0.4rem; font-size: 0.7rem;">
+                            <option value="60">1m</option>
+                            <option value="120" selected>2m</option>
+                            <option value="300">5m</option>
+                            <option value="600">10m</option>
+                            <option value="1800">30m</option>
+                            <option value="3600">1h</option>
+                        </select>
                     </div>
                 </div>
-            </div>
-            <!-- Last cycle summary -->
-            <div id="last-cycle-container" style="display: none;">
-                <div style="padding: 0.75rem 1.5rem; border-top: 1px solid var(--border-color);">
-                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.8rem;">
-                        <span style="color: var(--text-muted);">Last Cycle:</span>
+                <!-- Live cycle progress -->
+                <div id="cycle-progress-container" style="display: none;">
+                    <div class="progress-strip">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);" id="cycle-progress-text">Testing...</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);" id="cycle-progress-elapsed"></span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="cycle-progress-bar" class="progress-fill"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span id="cycle-progress-responded">Responded: 0</span>
+                            <span id="cycle-progress-failed" style="color: var(--accent-danger);">Failed: 0</span>
+                            <span id="cycle-progress-batch">Batch: 0/0</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Last cycle summary -->
+                <div id="last-cycle-container" style="display: none;">
+                    <div class="last-cycle-strip">
+                        <span style="color: var(--text-muted);">Last:</span>
                         <span id="lc-duration" style="color: var(--text-secondary);"></span>
                         <span id="lc-responded" style="color: var(--accent-primary);"></span>
                         <span id="lc-failed" style="color: var(--accent-danger);"></span>
@@ -226,150 +284,141 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">Scan Scheduler</div>
-                <div class="monitor-status">
-                    <div class="status-indicator">
-                        <div class="status-dot" id="scan-sched-dot"></div>
-                        <span id="scan-sched-status-text">Off</span>
+            <!-- Scan Scheduler -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Scan Scheduler</div>
+                    <div class="monitor-status">
+                        <div class="status-indicator">
+                            <div class="status-dot" id="scan-sched-dot"></div>
+                            <span id="scan-sched-status-text">Off</span>
+                        </div>
+                        <span id="scan-running-text" style="color: var(--accent-warning); font-size: 0.75rem;"></span>
+                        <button class="btn btn-xs btn-danger" id="scan-stop-btn" onclick="stopCurrentScan()" style="display: none;">Stop</button>
+                        <button class="btn btn-xs btn-secondary" id="scan-sched-toggle-btn" onclick="toggleScanSchedule()">Start</button>
+                        <select class="search-input" id="scan-interval-select" onchange="setScanScheduleInterval(this.value)" style="width: auto; padding: 0.2rem 0.4rem; font-size: 0.7rem;">
+                            <option value="300">5m</option>
+                            <option value="600">10m</option>
+                            <option value="1800">30m</option>
+                            <option value="3600" selected>1h</option>
+                            <option value="7200">2h</option>
+                            <option value="14400">4h</option>
+                            <option value="86400">24h</option>
+                        </select>
                     </div>
-                    <span id="scan-running-text" style="color: var(--accent-warning); font-size: 0.875rem;"></span>
-                    <button class="btn btn-sm btn-danger" id="scan-stop-btn" onclick="stopCurrentScan()" style="display: none;">Stop Scan</button>
-                    <button class="btn btn-sm btn-secondary" id="scan-sched-toggle-btn" onclick="toggleScanSchedule()">Start</button>
-                    <select class="search-input" id="scan-interval-select" onchange="setScanScheduleInterval(this.value)" style="width: auto;">
-                        <option value="300">5 min</option>
-                        <option value="600">10 min</option>
-                        <option value="1800">30 min</option>
-                        <option value="3600" selected>1 hour</option>
-                        <option value="7200">2 hours</option>
-                        <option value="14400">4 hours</option>
-                        <option value="86400">24 hours</option>
-                    </select>
                 </div>
             </div>
         </div>
 
-        <!-- Cycle History Log -->
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">Cycle History</div>
-                <button class="btn btn-sm btn-secondary" onclick="loadCycleHistory()">Refresh</button>
-            </div>
-            <div class="panel-body" style="padding: 0;">
-                <div class="table-container">
-                    <table id="cycle-history-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Time</th>
-                                <th>Duration</th>
-                                <th>Total IPs</th>
-                                <th>Responded</th>
-                                <th>Failed</th>
-                                <th>Avg Speed</th>
-                                <th>Batches</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cycle-history-body">
-                            <tr><td colspan="8" style="text-align: center; padding: 1rem; color: var(--text-muted);">No cycles yet</td></tr>
-                        </tbody>
-                    </table>
+        <!-- Cycle History + Cleanup side-by-side -->
+        <div class="grid-2">
+            <!-- Cycle History (collapsible) -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title panel-toggle" onclick="togglePanel('cycle-history-body-wrap')">
+                        Cycle History <span class="chevron">&#9660;</span>
+                    </div>
+                    <button class="btn btn-xs btn-secondary" onclick="loadCycleHistory()">Refresh</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Story #4: Auto-Cleanup Config Panel -->
-        <div class="panel">
-            <div class="panel-header">
-                <div class="panel-title">Auto-Cleanup Config</div>
-                <button class="btn btn-sm btn-secondary" onclick="loadCleanupConfig()">Reload</button>
-            </div>
-            <div class="panel-body">
-                <div class="ip-details-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-                    <div class="detail-item">
-                        <div class="detail-label">Zero-Speed Cleanup</div>
-                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
-                            <label class="toggle-switch"><input type="checkbox" id="cleanup-enabled" onchange="saveCleanupConfig()"><span class="toggle-slider"></span></label>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Enabled</span>
+                <div id="cycle-history-body-wrap" class="panel-collapsible">
+                    <div class="panel-body-flush">
+                        <div class="table-container" style="max-height: 200px; overflow-y: auto;">
+                            <table id="cycle-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Time</th>
+                                        <th>Dur</th>
+                                        <th>IPs</th>
+                                        <th>OK</th>
+                                        <th>Fail</th>
+                                        <th>Speed</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cycle-history-body">
+                                    <tr><td colspan="7" style="text-align: center; padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem;">No cycles yet</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Consecutive zero-speed tests</div>
-                        <input type="number" class="search-input" id="cleanup-no-speed-tests" value="10" min="1" style="width: 100%; margin-top: 0.5rem;" onchange="saveCleanupConfig()">
+                </div>
+            </div>
+
+            <!-- Auto-Cleanup Config (collapsible) -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title panel-toggle" onclick="togglePanel('cleanup-body-wrap')">
+                        Auto-Cleanup <span class="chevron">&#9660;</span>
                     </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Min Speed Cleanup</div>
-                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
-                            <label class="toggle-switch"><input type="checkbox" id="cleanup-min-speed-enabled" onchange="saveCleanupConfig()"><span class="toggle-slider"></span></label>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Enabled</span>
+                    <button class="btn btn-xs btn-secondary" onclick="loadCleanupConfig()">Reload</button>
+                </div>
+                <div id="cleanup-body-wrap" class="panel-collapsible">
+                    <div class="panel-body">
+                        <div class="config-row">
+                            <label><label class="toggle-switch"><input type="checkbox" id="cleanup-enabled" onchange="saveCleanupConfig()"><span class="toggle-slider"></span></label> Zero-speed cleanup</label>
+                            <label>after <input type="number" class="search-input" id="cleanup-no-speed-tests" value="10" min="1" onchange="saveCleanupConfig()"> tests</label>
                         </div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Min download speed (MB/s)</div>
-                        <input type="number" class="search-input" id="cleanup-min-speed" value="5" min="0" step="0.5" style="width: 100%; margin-top: 0.5rem;" onchange="saveCleanupConfig()">
+                        <div class="config-row">
+                            <label><label class="toggle-switch"><input type="checkbox" id="cleanup-min-speed-enabled" onchange="saveCleanupConfig()"><span class="toggle-slider"></span></label> Min speed cleanup</label>
+                            <label>below <input type="number" class="search-input" id="cleanup-min-speed" value="5" min="0" step="0.5" onchange="saveCleanupConfig()"> MB/s</label>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.65rem; margin-top: 0.25rem;">
+                            Runs every ~24 cycles. Zero-speed: remove IPs with 0 download in last N tests. Min-speed: remove below threshold.
+                        </p>
                     </div>
                 </div>
-                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">
-                    These rules run automatically every ~24 test cycles. Zero-speed: deactivate IPs with 0 download in last N tests.
-                    Min-speed: deactivate IPs below threshold in their latest test result.
-                </p>
             </div>
         </div>
 
+        <!-- IP Table (main content) -->
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">IP Addresses</div>
+                <div class="panel-title">IP Addresses <span class="panel-badge" id="ip-count-badge">0</span></div>
                 <div class="search-box">
-                    <input type="text" class="search-input" id="search-input" placeholder="Search IP..." oninput="filterIPs()">
+                    <input type="text" class="search-input" id="search-input" placeholder="Search IP..." oninput="filterIPs()" style="width: 140px;">
                     <select class="search-input" id="sort-select" onchange="sortIPs()">
-                        <option value="avg_download_speed">Sort: Speed</option>
-                        <option value="avg_latency">Sort: Latency</option>
-                        <option value="avg_loss_rate">Sort: Loss Rate</option>
-                        <option value="total_tests">Sort: Tests</option>
-                        <option value="last_tested">Sort: Last Tested</option>
+                        <option value="avg_download_speed">Speed</option>
+                        <option value="avg_latency">Latency</option>
+                        <option value="avg_loss_rate">Loss</option>
+                        <option value="total_tests">Tests</option>
+                        <option value="last_tested">Last Tested</option>
                     </select>
-                    <!-- Story #3: Date filter -->
                     <select class="search-input" id="date-filter-select" onchange="applyDateFilter()" style="width: auto;">
-                        <option value="">Filter: All Dates</option>
-                        <option value="1">Added: Last 24h</option>
-                        <option value="2">Added: Last 2 days</option>
-                        <option value="7">Added: Last week</option>
-                        <option value="14">Added: Last 2 weeks</option>
-                        <option value="30">Added: Last month</option>
+                        <option value="">All Dates</option>
+                        <option value="1">24h</option>
+                        <option value="2">2 days</option>
+                        <option value="7">1 week</option>
+                        <option value="14">2 weeks</option>
+                        <option value="30">1 month</option>
                     </select>
-                    <!-- Story #1 & #2: Clear test results -->
-                    <button class="btn btn-sm btn-warning" onclick="showClearResultsModal()" title="Clear test results for active IPs">Clear Results</button>
-                    <button class="btn btn-sm btn-secondary" onclick="showCleanDeadModal()" title="Remove IPs with 0 download speed">Clean Dead IPs</button>
-                    <button class="btn btn-sm btn-danger" onclick="deactivateAllIPs()" title="Deactivate all active IPs">Delete All</button>
+                    <button class="btn btn-xs btn-warning" onclick="showClearResultsModal()" title="Clear test results">Clear Results</button>
+                    <button class="btn btn-xs btn-secondary" onclick="showCleanDeadModal()" title="Remove dead IPs">Clean Dead</button>
+                    <button class="btn btn-xs btn-danger" onclick="deactivateAllIPs()" title="Deactivate all">Del All</button>
                 </div>
             </div>
-            <div class="panel-body">
-                <!-- Story #6: Bulk action bar -->
-                <div class="bulk-bar" id="bulk-bar">
-                    <span class="bulk-bar-text"><strong id="bulk-count">0</strong> IPs selected</span>
-                    <button class="btn btn-sm btn-danger" onclick="bulkDeactivate()">Delete Selected</button>
-                    <button class="btn btn-sm btn-secondary" onclick="clearBulkSelection()">Clear Selection</button>
+            <div class="panel-body-flush">
+                <!-- Bulk action bar -->
+                <div class="bulk-bar" id="bulk-bar" style="margin: 0.5rem 0.75rem;">
+                    <span style="color: var(--text-secondary);"><strong id="bulk-count">0</strong> selected</span>
+                    <button class="btn btn-xs btn-danger" onclick="bulkDeactivate()">Delete Selected</button>
+                    <button class="btn btn-xs btn-secondary" onclick="clearBulkSelection()">Clear</button>
                 </div>
                 <div class="table-container">
                     <table id="ip-table">
                         <thead>
                             <tr>
-                                <!-- Story #6: Bulk checkbox -->
-                                <th style="width: 40px; cursor: default;"><input type="checkbox" class="bulk-cb" id="select-all-cb" onchange="toggleSelectAll(this.checked)"></th>
+                                <th style="width: 30px; cursor: default;"><input type="checkbox" class="bulk-cb" id="select-all-cb" onchange="toggleSelectAll(this.checked)"></th>
                                 <th>IP Address</th>
-                                <th>Avg Speed</th>
-                                <th>Best Speed</th>
-                                <th>Avg Latency</th>
-                                <th>Best Latency</th>
-                                <th>Loss Rate</th>
+                                <th>Avg Spd</th>
+                                <th>Best Spd</th>
+                                <th>Avg Lat</th>
+                                <th>Best Lat</th>
+                                <th>Loss</th>
                                 <th>Tests</th>
-                                <!-- Story #5: Date Added column -->
-                                <th>Date Added</th>
-                                <th>Last Tested</th>
-                                <th>Actions</th>
+                                <th>Added</th>
+                                <th>Last Test</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="ip-table-body">
@@ -380,16 +429,22 @@
             </div>
         </div>
 
+        <!-- Hourly Chart (collapsible, collapsed by default) -->
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">Hourly Statistics (Last 24h)</div>
+                <div class="panel-title panel-toggle collapsed" onclick="togglePanel('hourly-chart-wrap')">
+                    Hourly Stats (24h) <span class="chevron">&#9660;</span>
+                </div>
             </div>
-            <div class="panel-body">
-                <div id="hourly-chart" class="chart-container"><div class="loading">Loading chart...</div></div>
+            <div id="hourly-chart-wrap" class="panel-collapsible collapsed">
+                <div class="panel-body">
+                    <div id="hourly-chart" class="chart-container"><div class="loading" style="padding: 1rem;">Loading chart...</div></div>
+                </div>
             </div>
         </div>
     </main>
 
+    <!-- IP Detail Modal -->
     <div class="modal-overlay" id="ip-modal">
         <div class="modal">
             <div class="modal-header">
@@ -400,6 +455,7 @@
         </div>
     </div>
 
+    <!-- Scan Config Modal -->
     <div class="modal-overlay" id="scan-modal">
         <div class="modal">
             <div class="modal-header">
@@ -413,12 +469,13 @@
                     <div class="detail-item"><div class="detail-label">Max Loss Rate</div><input type="number" class="search-input" id="scan-max-loss" value="0.25" step="0.01" style="width: 100%;"></div>
                     <div class="detail-item"><div class="detail-label">IPs to Test</div><input type="number" class="search-input" id="scan-test-count" value="50" style="width: 100%;"></div>
                 </div>
-                <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">This will scan all Cloudflare IP ranges and find IPs matching your criteria. The scan may take several minutes.</p>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem;">Scans all Cloudflare IP ranges to find IPs matching criteria. May take several minutes.</p>
                 <button class="btn btn-primary" onclick="startInitialScan()" style="width: 100%;">Start Scan</button>
             </div>
         </div>
     </div>
 
+    <!-- Clean Dead IPs Modal -->
     <div class="modal-overlay" id="clean-dead-modal">
         <div class="modal">
             <div class="modal-header">
@@ -426,14 +483,14 @@
                 <button class="modal-close" onclick="closeCleanDeadModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 1rem;">
                     Deactivate IPs whose download speed has been <strong>0</strong> across an entire range of tests.
                 </p>
-                <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
-                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.8rem;">
                         <input type="radio" name="clean-mode" value="tests" checked onchange="updateCleanPreview()"> By last N tests
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.8rem;">
                         <input type="radio" name="clean-mode" value="hours" onchange="updateCleanPreview()"> By time range
                     </label>
                 </div>
@@ -449,16 +506,16 @@
                             <option value="3">3 hours</option>
                             <option value="6" selected>6 hours</option>
                             <option value="12">12 hours</option>
-                            <option value="24">24 hours (1 day)</option>
-                            <option value="48">48 hours (2 days)</option>
-                            <option value="168">168 hours (7 days)</option>
+                            <option value="24">24 hours</option>
+                            <option value="48">48 hours</option>
+                            <option value="168">7 days</option>
                         </select>
                     </div>
                 </div>
-                <div id="clean-preview" style="text-align: center; padding: 0.75rem; margin: 1rem 0; background: var(--bg-secondary); border-radius: 8px; font-size: 0.875rem; color: var(--text-secondary);">
+                <div id="clean-preview" style="text-align: center; padding: 0.6rem; margin: 0.75rem 0; background: var(--bg-secondary); border-radius: 6px; font-size: 0.8rem; color: var(--text-secondary);">
                     Click preview to see affected IPs
                 </div>
-                <div style="display: flex; gap: 0.75rem;">
+                <div style="display: flex; gap: 0.5rem;">
                     <button class="btn btn-secondary" onclick="updateCleanPreview()" style="flex: 1;">Preview</button>
                     <button class="btn btn-danger" id="clean-execute-btn" onclick="executeCleanDead()" style="flex: 1;">Deactivate</button>
                 </div>
@@ -466,7 +523,7 @@
         </div>
     </div>
 
-    <!-- Story #1 & #2: Clear Test Results Modal -->
+    <!-- Clear Results Modal -->
     <div class="modal-overlay" id="clear-results-modal">
         <div class="modal">
             <div class="modal-header">
@@ -474,19 +531,19 @@
                 <button class="modal-close" onclick="closeClearResultsModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem;">
-                    Delete test results for all <strong>active</strong> IPs. Aggregate statistics will be recalculated after deletion.
+                <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 1rem;">
+                    Delete test results for all <strong>active</strong> IPs. Aggregates will be recalculated.
                 </p>
-                <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
-                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.8rem;">
                         <input type="radio" name="clear-mode" value="all" checked onchange="toggleClearDateFields()"> All results
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                    <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.8rem;">
                         <input type="radio" name="clear-mode" value="before" onchange="toggleClearDateFields()"> Older than...
                     </label>
                 </div>
-                <div id="clear-date-group" style="opacity: 0.4; margin-bottom: 1rem;">
-                    <div class="detail-label" style="margin-bottom: 0.5rem;">Delete results older than</div>
+                <div id="clear-date-group" style="opacity: 0.4; margin-bottom: 0.75rem;">
+                    <div class="detail-label" style="margin-bottom: 0.35rem;">Delete results older than</div>
                     <select class="search-input" id="clear-date-select" style="width: 100%;" disabled>
                         <option value="1">1 day ago</option>
                         <option value="2">2 days ago</option>
@@ -496,9 +553,7 @@
                         <option value="30">1 month ago</option>
                     </select>
                 </div>
-                <div style="display: flex; gap: 0.75rem;">
-                    <button class="btn btn-danger" onclick="executeClearResults()" style="flex: 1;">Clear Test Results</button>
-                </div>
+                <button class="btn btn-danger" onclick="executeClearResults()" style="width: 100%;">Clear Test Results</button>
             </div>
         </div>
     </div>
@@ -510,7 +565,15 @@
         let sortDir = 'DESC';
         var selectedIPs = new Set();
 
-        // Relative time helper: returns "just now", "1 minute ago", "3 hours ago", etc.
+        // ===== Collapsible panels =====
+        function togglePanel(id) {
+            var wrap = document.getElementById(id);
+            var toggle = wrap.previousElementSibling.querySelector('.panel-toggle') || wrap.closest('.panel').querySelector('.panel-toggle');
+            wrap.classList.toggle('collapsed');
+            if (toggle) toggle.classList.toggle('collapsed');
+        }
+
+        // ===== Relative time =====
         function timeAgo(dateStr) {
             if (!dateStr) return '-';
             var now = new Date();
@@ -520,18 +583,18 @@
             var sec = Math.floor(diffMs / 1000);
             if (sec < 60) return 'just now';
             var min = Math.floor(sec / 60);
-            if (min < 60) return min + (min === 1 ? ' minute ago' : ' minutes ago');
+            if (min < 60) return min + (min === 1 ? ' min ago' : ' min ago');
             var hr = Math.floor(min / 60);
-            if (hr < 24) return hr + (hr === 1 ? ' hour ago' : ' hours ago');
+            if (hr < 24) return hr + (hr === 1 ? ' hr ago' : ' hrs ago');
             var day = Math.floor(hr / 24);
             if (day < 30) return day + (day === 1 ? ' day ago' : ' days ago');
             var month = Math.floor(day / 30);
-            if (month < 12) return month + (month === 1 ? ' month ago' : ' months ago');
+            if (month < 12) return month + (month === 1 ? ' mo ago' : ' mos ago');
             var year = Math.floor(month / 12);
-            return year + (year === 1 ? ' year ago' : ' years ago');
+            return year + (year === 1 ? ' yr ago' : ' yrs ago');
         }
 
-        // Live header clock
+        // ===== Header clock =====
         function updateHeaderClock() {
             var el = document.getElementById('header-clock');
             if (el) el.textContent = new Date().toLocaleString();
@@ -539,20 +602,22 @@
         updateHeaderClock();
         setInterval(updateHeaderClock, 1000);
 
+        // ===== Toast =====
         function showToast(message, type) {
             type = type || 'success';
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
+            var container = document.getElementById('toast-container');
+            var toast = document.createElement('div');
             toast.className = 'toast ' + type;
             toast.innerHTML = message;
             container.appendChild(toast);
             setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 3000);
         }
 
+        // ===== API =====
         async function fetchAPI(url, options) {
             options = options || {};
             try {
-                const response = await fetch(url, options);
+                var response = await fetch(url, options);
                 return await response.json();
             } catch (error) {
                 console.error('API Error:', error);
@@ -561,8 +626,9 @@
             }
         }
 
+        // ===== Stats =====
         async function loadStats() {
-            const data = await fetchAPI('/api/stats');
+            var data = await fetchAPI('/api/stats');
             if (!data) return;
             document.getElementById('stat-active-ips').textContent = data.total_active_ips || 0;
             document.getElementById('stat-total-tests').textContent = data.total_tests || 0;
@@ -574,6 +640,7 @@
             if (data.scanner) updateScanStatus(data.scanner);
         }
 
+        // ===== Monitor Status =====
         var _cycleProgressTimer = null;
 
         function updateMonitorStatus(status) {
@@ -599,16 +666,16 @@
                     resumeBtn.style.display = 'none';
                 }
                 btn.textContent = 'Stop';
-                btn.className = 'btn btn-sm btn-danger';
-                interval.textContent = 'Interval: ' + status.interval_seconds + 's';
+                btn.className = 'btn btn-xs btn-danger';
+                interval.textContent = 'Intv: ' + status.interval_seconds + 's';
                 if (status.next_test_in !== null) next.textContent = 'Next: ' + status.next_test_in + 's';
-                batchInfo.textContent = 'Batch size: ' + (status.batch_size || 20);
+                batchInfo.textContent = 'Batch: ' + (status.batch_size || 20);
                 startCycleProgressPolling();
             } else {
                 dot.className = 'status-dot stopped';
                 text.textContent = 'Stopped';
                 btn.textContent = 'Start';
-                btn.className = 'btn btn-sm btn-secondary';
+                btn.className = 'btn btn-xs btn-secondary';
                 interval.textContent = '';
                 next.textContent = '';
                 batchInfo.textContent = '';
@@ -618,7 +685,7 @@
             }
         }
 
-        // ===== Live Cycle Progress =====
+        // ===== Cycle Progress Polling =====
         function startCycleProgressPolling() {
             if (_cycleProgressTimer) return;
             pollCycleProgress();
@@ -626,10 +693,7 @@
         }
 
         function stopCycleProgressPolling() {
-            if (_cycleProgressTimer) {
-                clearInterval(_cycleProgressTimer);
-                _cycleProgressTimer = null;
-            }
+            if (_cycleProgressTimer) { clearInterval(_cycleProgressTimer); _cycleProgressTimer = null; }
         }
 
         async function pollCycleProgress() {
@@ -641,14 +705,13 @@
                 var pct = data.ips_total > 0 ? Math.round((data.ips_tested / data.ips_total) * 100) : 0;
                 document.getElementById('cycle-progress-bar').style.width = pct + '%';
                 document.getElementById('cycle-progress-text').textContent =
-                    'Testing ' + data.ips_tested + '/' + data.ips_total + ' IPs (' + pct + '%)';
+                    'Testing ' + data.ips_tested + '/' + data.ips_total + ' (' + pct + '%)';
                 document.getElementById('cycle-progress-elapsed').textContent = data.elapsed_seconds + 's';
-                document.getElementById('cycle-progress-responded').textContent = 'Responded: ' + data.ips_responded;
-                document.getElementById('cycle-progress-failed').textContent = 'Failed: ' + data.ips_failed;
-                document.getElementById('cycle-progress-batch').textContent = 'Batch: ' + data.current_batch + '/' + data.total_batches;
+                document.getElementById('cycle-progress-responded').textContent = 'OK: ' + data.ips_responded;
+                document.getElementById('cycle-progress-failed').textContent = 'Fail: ' + data.ips_failed;
+                document.getElementById('cycle-progress-batch').textContent = 'Batch ' + data.current_batch + '/' + data.total_batches;
             } else {
                 container.style.display = 'none';
-                // Load last cycle summary when cycle finishes
                 loadLastCycleSummary();
             }
         }
@@ -661,32 +724,31 @@
                 return;
             }
             document.getElementById('last-cycle-container').style.display = '';
-            document.getElementById('lc-duration').textContent = 'Duration: ' + data.duration_seconds + 's';
-            document.getElementById('lc-responded').textContent = 'OK: ' + data.ips_responded + '/' + data.ips_total;
-            document.getElementById('lc-failed').textContent = 'Failed: ' + data.ips_failed;
-            document.getElementById('lc-avg-speed').textContent = 'Avg: ' + data.avg_speed + ' MB/s';
+            document.getElementById('lc-duration').textContent = data.duration_seconds + 's';
+            document.getElementById('lc-responded').textContent = 'OK ' + data.ips_responded + '/' + data.ips_total;
+            document.getElementById('lc-failed').textContent = 'Fail ' + data.ips_failed;
+            document.getElementById('lc-avg-speed').textContent = data.avg_speed + ' MB/s';
             document.getElementById('lc-time').textContent = timeAgo(data.timestamp);
         }
 
-        // ===== Cycle History Log =====
+        // ===== Cycle History =====
         async function loadCycleHistory() {
             var data = await fetchAPI('/api/monitor/cycle-history?limit=20');
             if (!data || !data.history || data.history.length === 0) {
                 document.getElementById('cycle-history-body').innerHTML =
-                    '<tr><td colspan="8" style="text-align: center; padding: 1rem; color: var(--text-muted);">No cycles yet</td></tr>';
+                    '<tr><td colspan="7" style="text-align: center; padding: 0.75rem; color: var(--text-muted); font-size: 0.7rem;">No cycles yet</td></tr>';
                 return;
             }
             document.getElementById('cycle-history-body').innerHTML = data.history.map(function(c) {
-                var failClass = c.ips_failed > 0 ? ' style="color: var(--accent-danger);"' : '';
+                var failStyle = c.ips_failed > 0 ? ' style="color: var(--accent-danger);"' : '';
                 return '<tr>' +
                     '<td>' + c.cycle_number + '</td>' +
-                    '<td style="font-size: 0.7rem;" title="' + new Date(c.timestamp).toLocaleString() + '">' + timeAgo(c.timestamp) + '</td>' +
+                    '<td title="' + new Date(c.timestamp).toLocaleString() + '">' + timeAgo(c.timestamp) + '</td>' +
                     '<td>' + c.duration_seconds + 's</td>' +
                     '<td>' + c.ips_total + '</td>' +
                     '<td style="color: var(--accent-primary);">' + c.ips_responded + '</td>' +
-                    '<td' + failClass + '>' + c.ips_failed + '</td>' +
-                    '<td>' + c.avg_speed + ' MB/s</td>' +
-                    '<td>' + c.batches + '</td>' +
+                    '<td' + failStyle + '>' + c.ips_failed + '</td>' +
+                    '<td>' + c.avg_speed + '</td>' +
                     '</tr>';
             }).join('');
         }
@@ -696,15 +758,14 @@
             var result = await fetchAPI('/api/monitor/pause', { method: 'POST' });
             if (result) { showToast('Monitor paused', 'success'); loadStats(); }
         }
-
         async function resumeMonitor() {
             var result = await fetchAPI('/api/monitor/resume', { method: 'POST' });
             if (result) { showToast('Monitor resumed', 'success'); loadStats(); }
         }
 
-        // Story #3: Build URL with date filter params
+        // ===== IP Table =====
         async function loadIPs() {
-            const search = document.getElementById('search-input').value;
+            var search = document.getElementById('search-input').value;
             var url = '/api/ips?sort=' + currentSort + '&dir=' + sortDir;
             if (search) url += '&search=' + encodeURIComponent(search);
             var dateFilterDays = document.getElementById('date-filter-select').value;
@@ -713,27 +774,28 @@
                 d.setDate(d.getDate() - parseInt(dateFilterDays));
                 url += '&date_from=' + encodeURIComponent(d.toISOString());
             }
-            const data = await fetchAPI(url);
+            var data = await fetchAPI(url);
             if (!data) return;
-            renderIPTable(data.ips || []);
+            var ips = data.ips || [];
+            document.getElementById('ip-count-badge').textContent = ips.length;
+            renderIPTable(ips);
         }
 
         function renderIPTable(ips) {
-            const tbody = document.getElementById('ip-table-body');
+            var tbody = document.getElementById('ip-table-body');
             if (ips.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><div class="empty-state-icon">No Data</div><div>No IPs found. Run an initial scan.</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No IPs found. Run an initial scan.</td></tr>';
                 updateBulkBar();
                 return;
             }
             tbody.innerHTML = ips.map(function(ip) {
-                const speedClass = ip.avg_download_speed >= 15 ? 'speed-good' : (ip.avg_download_speed >= 8 ? 'speed-medium' : 'speed-bad');
-                const lossClass = ip.avg_loss_rate <= 0.1 ? 'speed-good' : (ip.avg_loss_rate <= 0.25 ? 'speed-medium' : 'speed-bad');
-                const lastTestedAgo = ip.last_tested ? timeAgo(ip.last_tested) : 'Never';
-                const lastTestedFull = ip.last_tested ? new Date(ip.last_tested).toLocaleString() : '';
-                // Story #5: Date Added
-                const dateAddedAgo = ip.first_seen ? timeAgo(ip.first_seen) : '-';
-                const dateAddedFull = ip.first_seen ? new Date(ip.first_seen).toLocaleString() : '';
-                const isChecked = selectedIPs.has(ip.ip_address) ? ' checked' : '';
+                var speedClass = ip.avg_download_speed >= 15 ? 'speed-good' : (ip.avg_download_speed >= 8 ? 'speed-medium' : 'speed-bad');
+                var lossClass = ip.avg_loss_rate <= 0.1 ? 'speed-good' : (ip.avg_loss_rate <= 0.25 ? 'speed-medium' : 'speed-bad');
+                var lastTestedAgo = ip.last_tested ? timeAgo(ip.last_tested) : 'Never';
+                var lastTestedFull = ip.last_tested ? new Date(ip.last_tested).toLocaleString() : '';
+                var dateAddedAgo = ip.first_seen ? timeAgo(ip.first_seen) : '-';
+                var dateAddedFull = ip.first_seen ? new Date(ip.first_seen).toLocaleString() : '';
+                var isChecked = selectedIPs.has(ip.ip_address) ? ' checked' : '';
                 return '<tr>' +
                     '<td><input type="checkbox" class="bulk-cb row-cb" data-ip="' + ip.ip_address + '"' + isChecked + ' onchange="onRowCheckChange(this)"></td>' +
                     '<td class="ip-cell" onclick="showIPDetails(\'' + ip.ip_address + '\')">' + ip.ip_address + '</td>' +
@@ -743,18 +805,17 @@
                     '<td>' + (ip.best_latency || 0).toFixed(0) + '</td>' +
                     '<td class="' + lossClass + '">' + ((ip.avg_loss_rate || 0) * 100).toFixed(1) + '%</td>' +
                     '<td>' + (ip.total_tests || 0) + '</td>' +
-                    '<td style="font-size: 0.7rem;" title="' + dateAddedFull + '">' + dateAddedAgo + '</td>' +
-                    '<td style="font-size: 0.7rem;" title="' + lastTestedFull + '">' + lastTestedAgo + '</td>' +
-                    '<td><button class="btn btn-sm btn-danger" onclick="deactivateIP(\'' + ip.ip_address + '\')">X</button></td>' +
+                    '<td title="' + dateAddedFull + '">' + dateAddedAgo + '</td>' +
+                    '<td title="' + lastTestedFull + '">' + lastTestedAgo + '</td>' +
+                    '<td><button class="btn btn-xs btn-danger" onclick="deactivateIP(\'' + ip.ip_address + '\')">X</button></td>' +
                     '</tr>';
             }).join('');
             updateBulkBar();
         }
 
-        // Story #3: Date filter handler
         function applyDateFilter() { loadIPs(); }
 
-        // ===== Story #6: Bulk Selection =====
+        // ===== Bulk Selection =====
         function onRowCheckChange(cb) {
             var ip = cb.getAttribute('data-ip');
             if (cb.checked) { selectedIPs.add(ip); } else { selectedIPs.delete(ip); }
@@ -800,11 +861,10 @@
             var count = selectedIPs.size;
             if (count === 0) return;
             if (!confirm('Deactivate ' + count + ' selected IPs?')) return;
-            var ipList = Array.from(selectedIPs);
             var result = await fetchAPI('/api/ips/bulk-deactivate', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ ips: ipList })
+                body: JSON.stringify({ ips: Array.from(selectedIPs) })
             });
             if (result) {
                 showToast('Deactivated ' + result.count + ' IPs', 'success');
@@ -813,7 +873,7 @@
             }
         }
 
-        // ===== Story #1 & #2: Clear Test Results =====
+        // ===== Clear Results Modal =====
         function showClearResultsModal() { document.getElementById('clear-results-modal').classList.add('active'); }
         function closeClearResultsModal() { document.getElementById('clear-results-modal').classList.remove('active'); }
 
@@ -834,7 +894,7 @@
                 var cutoff = new Date();
                 cutoff.setDate(cutoff.getDate() - days);
                 body.before = cutoff.toISOString();
-                confirmMsg = 'Delete test results older than ' + days + ' day(s) for active IPs?';
+                confirmMsg = 'Delete test results older than ' + days + ' day(s)?';
             }
             if (!confirm(confirmMsg)) return;
             var result = await fetchAPI('/api/ips/clear-test-results', {
@@ -851,7 +911,7 @@
             }
         }
 
-        // ===== Story #4: Auto-Cleanup Config =====
+        // ===== Cleanup Config =====
         async function loadCleanupConfig() {
             var data = await fetchAPI('/api/cleanup/config');
             if (!data) return;
@@ -878,44 +938,45 @@
             }
         }
 
+        // ===== Hourly Chart =====
         async function loadHourlyChart() {
-            const data = await fetchAPI('/api/hourly?hours=24');
+            var data = await fetchAPI('/api/hourly?hours=24');
             if (!data || !data.stats || data.stats.length === 0) {
-                document.getElementById('hourly-chart').innerHTML = '<div class="empty-state">No data available</div>';
+                document.getElementById('hourly-chart').innerHTML = '<div class="empty-state" style="padding: 1rem;">No data available</div>';
                 return;
             }
-            const maxSpeed = Math.max.apply(null, data.stats.map(function(s) { return s.avg_speed || 0; }));
-            const container = document.getElementById('hourly-chart');
-            container.innerHTML = data.stats.map(function(stat) {
-                const height = maxSpeed > 0 ? ((stat.avg_speed || 0) / maxSpeed * 100) : 0;
+            var maxSpeed = Math.max.apply(null, data.stats.map(function(s) { return s.avg_speed || 0; }));
+            document.getElementById('hourly-chart').innerHTML = data.stats.map(function(stat) {
+                var height = maxSpeed > 0 ? ((stat.avg_speed || 0) / maxSpeed * 100) : 0;
                 return '<div class="chart-bar" style="height: ' + height + '%;" title="' + (stat.avg_speed || 0).toFixed(1) + ' MB/s"></div>';
             }).join('');
         }
 
+        // ===== IP Details Modal =====
         async function showIPDetails(ip) {
             document.getElementById('ip-modal').classList.add('active');
             document.getElementById('modal-ip-title').textContent = 'IP: ' + ip;
             document.getElementById('modal-body').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
-            const results = await Promise.all([
+            var results = await Promise.all([
                 fetchAPI('/api/ip?ip=' + encodeURIComponent(ip)),
                 fetchAPI('/api/history?ip=' + encodeURIComponent(ip) + '&hours=24')
             ]);
-            const details = results[0];
-            const history = results[1];
+            var details = results[0];
+            var history = results[1];
             if (!details) { document.getElementById('modal-body').innerHTML = '<div class="empty-state">Failed to load</div>'; return; }
-            let html = '<div class="ip-details-grid">' +
-                '<div class="detail-item"><div class="detail-label">Avg Speed</div><div class="detail-value">' + (details.avg_download_speed || 0).toFixed(2) + ' MB/s</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Best Speed</div><div class="detail-value">' + (details.best_download_speed || 0).toFixed(2) + ' MB/s</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Avg Latency</div><div class="detail-value">' + (details.avg_latency || 0).toFixed(0) + ' ms</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Best Latency</div><div class="detail-value">' + (details.best_latency || 0).toFixed(0) + ' ms</div></div>' +
+            var html = '<div class="ip-details-grid">' +
+                '<div class="detail-item"><div class="detail-label">Avg Speed</div><div class="detail-value">' + (details.avg_download_speed || 0).toFixed(2) + ' <span class="stat-chip-unit">MB/s</span></div></div>' +
+                '<div class="detail-item"><div class="detail-label">Best Speed</div><div class="detail-value">' + (details.best_download_speed || 0).toFixed(2) + ' <span class="stat-chip-unit">MB/s</span></div></div>' +
+                '<div class="detail-item"><div class="detail-label">Avg Latency</div><div class="detail-value">' + (details.avg_latency || 0).toFixed(0) + ' <span class="stat-chip-unit">ms</span></div></div>' +
+                '<div class="detail-item"><div class="detail-label">Best Latency</div><div class="detail-value">' + (details.best_latency || 0).toFixed(0) + ' <span class="stat-chip-unit">ms</span></div></div>' +
                 '<div class="detail-item"><div class="detail-label">Avg Loss</div><div class="detail-value">' + ((details.avg_loss_rate || 0) * 100).toFixed(1) + '%</div></div>' +
                 '<div class="detail-item"><div class="detail-label">Total Tests</div><div class="detail-value">' + (details.total_tests || 0) + '</div></div>' +
-                '<div class="detail-item"><div class="detail-label">Date Added</div><div class="detail-value" style="font-size: 0.9rem;" title="' + (details.first_seen ? new Date(details.first_seen).toLocaleString() : '') + '">' + timeAgo(details.first_seen) + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">Added</div><div class="detail-value" style="font-size: 0.85rem;" title="' + (details.first_seen ? new Date(details.first_seen).toLocaleString() : '') + '">' + timeAgo(details.first_seen) + '</div></div>' +
                 '</div>';
             if (history && history.history && history.history.length > 0) {
-                html += '<h4 style="margin: 1rem 0 0.5rem;">Recent History (24h)</h4><div class="table-container"><table><thead><tr><th>Time</th><th>Speed</th><th>Latency</th><th>Loss</th></tr></thead><tbody>';
+                html += '<h4 style="margin: 0.75rem 0 0.4rem; font-size: 0.85rem;">Recent History (24h)</h4><div class="table-container" style="max-height: 250px; overflow-y: auto;"><table><thead><tr><th>Time</th><th>Speed</th><th>Latency</th><th>Loss</th></tr></thead><tbody>';
                 html += history.history.slice(0, 20).map(function(h) {
-                    return '<tr><td style="font-size: 0.75rem;" title="' + new Date(h.test_time).toLocaleString() + '">' + timeAgo(h.test_time) + '</td><td>' + (h.download_speed_mbps || 0).toFixed(2) + '</td><td>' + (h.latency_ms || 0).toFixed(0) + '</td><td>' + ((h.loss_rate || 0) * 100).toFixed(1) + '%</td></tr>';
+                    return '<tr><td title="' + new Date(h.test_time).toLocaleString() + '">' + timeAgo(h.test_time) + '</td><td>' + (h.download_speed_mbps || 0).toFixed(2) + '</td><td>' + (h.latency_ms || 0).toFixed(0) + '</td><td>' + ((h.loss_rate || 0) * 100).toFixed(1) + '%</td></tr>';
                 }).join('');
                 html += '</tbody></table></div>';
             }
@@ -927,30 +988,26 @@
         function closeScanModal() { document.getElementById('scan-modal').classList.remove('active'); }
 
         async function startInitialScan() {
-            const data = {
+            var data = {
                 min_speed: parseFloat(document.getElementById('scan-min-speed').value),
                 max_latency: parseInt(document.getElementById('scan-max-latency').value),
                 max_loss: parseFloat(document.getElementById('scan-max-loss').value),
                 test_count: parseInt(document.getElementById('scan-test-count').value)
             };
-            const result = await fetchAPI('/api/scan/initial', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-            if (result) {
-                showToast('Initial scan started! This may take several minutes.', 'success');
-                closeScanModal();
-                startScanPolling();
-            }
+            var result = await fetchAPI('/api/scan/initial', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            if (result) { showToast('Initial scan started!', 'success'); closeScanModal(); startScanPolling(); }
         }
 
         async function testNow() {
-            const result = await fetchAPI('/api/scan/test', { method: 'POST' });
+            var result = await fetchAPI('/api/scan/test', { method: 'POST' });
             if (result) { showToast('Test started!', 'success'); setTimeout(refreshData, 5000); }
         }
 
         async function toggleMonitor() {
-            const status = await fetchAPI('/api/monitor/status');
-            const endpoint = status && status.is_running ? '/api/monitor/stop' : '/api/monitor/start';
-            const interval = parseInt(document.getElementById('interval-select').value);
-            const result = await fetchAPI(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({interval: interval}) });
+            var status = await fetchAPI('/api/monitor/status');
+            var endpoint = status && status.is_running ? '/api/monitor/stop' : '/api/monitor/start';
+            var interval = parseInt(document.getElementById('interval-select').value);
+            var result = await fetchAPI(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({interval: interval}) });
             if (result) { showToast('Monitor ' + (result.status === 'started' ? 'started' : 'stopped'), 'success'); loadStats(); }
         }
 
@@ -961,7 +1018,7 @@
 
         async function deactivateIP(ip) {
             if (!confirm('Deactivate IP ' + ip + '?')) return;
-            const result = await fetchAPI('/api/ip/deactivate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ip: ip}) });
+            var result = await fetchAPI('/api/ip/deactivate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ip: ip}) });
             if (result) { showToast('IP deactivated', 'success'); selectedIPs.delete(ip); loadIPs(); loadStats(); }
         }
 
@@ -972,6 +1029,7 @@
             loadIPs();
         }
 
+        // ===== Scan Status =====
         var _scanPollTimer = null;
         var _wasScanningLast = false;
 
@@ -981,10 +1039,7 @@
         }
 
         function stopScanPolling() {
-            if (_scanPollTimer) {
-                clearInterval(_scanPollTimer);
-                _scanPollTimer = null;
-            }
+            if (_scanPollTimer) { clearInterval(_scanPollTimer); _scanPollTimer = null; }
         }
 
         function updateScanStatus(status) {
@@ -998,17 +1053,16 @@
 
             if (status.schedule && status.schedule.is_running) {
                 dot.className = 'status-dot running';
-                text.textContent = 'Scheduled (' + status.schedule.scan_count + ' runs)';
+                text.textContent = 'Sched (' + status.schedule.scan_count + ')';
                 toggleBtn.textContent = 'Stop';
-                toggleBtn.className = 'btn btn-sm btn-danger';
+                toggleBtn.className = 'btn btn-xs btn-danger';
             } else {
                 dot.className = 'status-dot stopped';
                 text.textContent = 'Off';
                 toggleBtn.textContent = 'Start';
-                toggleBtn.className = 'btn btn-sm btn-secondary';
+                toggleBtn.className = 'btn btn-xs btn-secondary';
             }
 
-            // Sync dropdown with actual configured interval
             if (status.schedule && status.schedule.interval_seconds) {
                 var val = String(status.schedule.interval_seconds);
                 if (intervalSelect.querySelector('option[value="' + val + '"]')) {
@@ -1022,7 +1076,7 @@
                 var elapsed = status.elapsed_seconds || 0;
                 var min = Math.floor(elapsed / 60);
                 var sec = elapsed % 60;
-                runningText.textContent = 'Scanning... ' + (min > 0 ? min + 'm ' : '') + sec + 's';
+                runningText.textContent = 'Scanning ' + (min > 0 ? min + 'm ' : '') + sec + 's';
                 startScanPolling();
             } else {
                 stopBtn.style.display = 'none';
@@ -1032,11 +1086,11 @@
                     stopScanPolling();
                     var lastResult = status.last_result;
                     if (lastResult && lastResult.status === 'completed') {
-                        showToast('Scan completed! Found ' + (lastResult.passed || 0) + ' IPs in ' + (lastResult.duration_seconds || 0).toFixed(0) + 's', 'success');
+                        showToast('Scan done! ' + (lastResult.passed || 0) + ' IPs in ' + (lastResult.duration_seconds || 0).toFixed(0) + 's', 'success');
                     } else if (lastResult && lastResult.status === 'cancelled') {
-                        showToast('Scan was cancelled', 'error');
+                        showToast('Scan cancelled', 'error');
                     } else if (lastResult && lastResult.status === 'error') {
-                        showToast('Scan failed: ' + (lastResult.error || 'unknown error'), 'error');
+                        showToast('Scan failed: ' + (lastResult.error || 'unknown'), 'error');
                     }
                     loadIPs();
                     loadHourlyChart();
@@ -1065,8 +1119,8 @@
 
         async function deactivateAllIPs() {
             if (!confirm('Deactivate ALL active IPs? This cannot be undone.')) return;
-            if (!confirm('Are you sure? Every active IP will be removed from the list.')) return;
-            const result = await fetchAPI('/api/ips/deactivate-all', { method: 'POST' });
+            if (!confirm('Are you sure? Every active IP will be removed.')) return;
+            var result = await fetchAPI('/api/ips/deactivate-all', { method: 'POST' });
             if (result) { showToast('Deactivated ' + result.count + ' IPs', 'success'); selectedIPs.clear(); refreshData(); }
         }
 
@@ -1092,14 +1146,14 @@
             var value = mode === 'tests'
                 ? parseInt(document.getElementById('clean-last-n').value)
                 : parseInt(document.getElementById('clean-hours').value);
-            document.getElementById('clean-preview').innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0 auto;"></div>';
+            document.getElementById('clean-preview').innerHTML = '<div class="spinner" style="width:16px;height:16px;margin:0 auto;"></div>';
             var result = await fetchAPI('/api/ips/preview-dead?mode=' + mode + '&value=' + value);
             if (result) {
                 var label = mode === 'tests'
                     ? 'with 0 speed in last ' + value + ' tests'
                     : 'with 0 speed in last ' + value + ' hours';
                 document.getElementById('clean-preview').innerHTML =
-                    '<span style="font-size: 1.25rem; font-weight: 700; color: var(--accent-danger);">' + result.count + '</span> IPs ' + label;
+                    '<span style="font-size: 1.1rem; font-weight: 700; color: var(--accent-danger);">' + result.count + '</span> IPs ' + label;
             }
         }
 
@@ -1109,7 +1163,7 @@
                 ? parseInt(document.getElementById('clean-last-n').value)
                 : parseInt(document.getElementById('clean-hours').value);
             var label = mode === 'tests' ? 'last ' + value + ' tests' : 'last ' + value + ' hours';
-            if (!confirm('Deactivate all IPs with 0 download speed in ' + label + '?')) return;
+            if (!confirm('Deactivate all IPs with 0 download in ' + label + '?')) return;
             var result = await fetchAPI('/api/ips/deactivate-dead', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -1122,6 +1176,7 @@
             }
         }
 
+        // ===== Refresh =====
         function refreshData() { loadStats(); loadIPs(); loadHourlyChart(); loadLastCycleSummary(); loadCycleHistory(); }
         setInterval(function() { loadStats(); }, 30000);
         setInterval(function() { loadIPs(); loadHourlyChart(); loadCycleHistory(); }, 120000);
