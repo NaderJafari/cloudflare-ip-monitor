@@ -182,7 +182,10 @@
                     </div>
                     <span id="monitor-interval" style="color: var(--text-muted); font-size: 0.875rem;"></span>
                     <span id="monitor-next" style="color: var(--text-muted); font-size: 0.875rem;"></span>
+                    <span id="monitor-batch-info" style="color: var(--text-muted); font-size: 0.875rem;"></span>
                     <button class="btn btn-sm btn-secondary" id="monitor-toggle-btn" onclick="toggleMonitor()">Start</button>
+                    <button class="btn btn-sm btn-warning" id="monitor-pause-btn" onclick="pauseMonitor()" style="display: none;">Pause</button>
+                    <button class="btn btn-sm btn-primary" id="monitor-resume-btn" onclick="resumeMonitor()" style="display: none;">Resume</button>
                     <select class="search-input" id="interval-select" onchange="setMonitorInterval(this.value)" style="width: auto;">
                         <option value="60">1 min</option>
                         <option value="120" selected>2 min</option>
@@ -191,6 +194,36 @@
                         <option value="1800">30 min</option>
                         <option value="3600">1 hour</option>
                     </select>
+                </div>
+            </div>
+            <!-- Live cycle progress bar -->
+            <div id="cycle-progress-container" style="display: none;">
+                <div style="padding: 0.75rem 1.5rem; background: var(--bg-tertiary); border-top: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);" id="cycle-progress-text">Testing...</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);" id="cycle-progress-elapsed"></span>
+                    </div>
+                    <div style="height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden;">
+                        <div id="cycle-progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); border-radius: 3px; transition: width 0.3s ease; width: 0%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.4rem; font-size: 0.7rem; color: var(--text-muted);">
+                        <span id="cycle-progress-responded">Responded: 0</span>
+                        <span id="cycle-progress-failed" style="color: var(--accent-danger);">Failed: 0</span>
+                        <span id="cycle-progress-batch">Batch: 0/0</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Last cycle summary -->
+            <div id="last-cycle-container" style="display: none;">
+                <div style="padding: 0.75rem 1.5rem; border-top: 1px solid var(--border-color);">
+                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.8rem;">
+                        <span style="color: var(--text-muted);">Last Cycle:</span>
+                        <span id="lc-duration" style="color: var(--text-secondary);"></span>
+                        <span id="lc-responded" style="color: var(--accent-primary);"></span>
+                        <span id="lc-failed" style="color: var(--accent-danger);"></span>
+                        <span id="lc-avg-speed" style="color: var(--text-secondary);"></span>
+                        <span id="lc-time" style="color: var(--text-muted);"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -215,6 +248,35 @@
                         <option value="14400">4 hours</option>
                         <option value="86400">24 hours</option>
                     </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cycle History Log -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Cycle History</div>
+                <button class="btn btn-sm btn-secondary" onclick="loadCycleHistory()">Refresh</button>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+                <div class="table-container">
+                    <table id="cycle-history-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Time</th>
+                                <th>Duration</th>
+                                <th>Total IPs</th>
+                                <th>Responded</th>
+                                <th>Failed</th>
+                                <th>Avg Speed</th>
+                                <th>Batches</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cycle-history-body">
+                            <tr><td colspan="8" style="text-align: center; padding: 1rem; color: var(--text-muted);">No cycles yet</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -512,20 +574,36 @@
             if (data.scanner) updateScanStatus(data.scanner);
         }
 
+        var _cycleProgressTimer = null;
+
         function updateMonitorStatus(status) {
-            const dot = document.getElementById('monitor-dot');
-            const text = document.getElementById('monitor-status-text');
-            const btn = document.getElementById('monitor-toggle-btn');
-            const interval = document.getElementById('monitor-interval');
-            const next = document.getElementById('monitor-next');
+            var dot = document.getElementById('monitor-dot');
+            var text = document.getElementById('monitor-status-text');
+            var btn = document.getElementById('monitor-toggle-btn');
+            var interval = document.getElementById('monitor-interval');
+            var next = document.getElementById('monitor-next');
+            var batchInfo = document.getElementById('monitor-batch-info');
+            var pauseBtn = document.getElementById('monitor-pause-btn');
+            var resumeBtn = document.getElementById('monitor-resume-btn');
 
             if (status.is_running) {
-                dot.className = 'status-dot running';
-                text.textContent = 'Running';
+                if (status.is_paused) {
+                    dot.className = 'status-dot stopped';
+                    text.textContent = 'Paused';
+                    pauseBtn.style.display = 'none';
+                    resumeBtn.style.display = '';
+                } else {
+                    dot.className = 'status-dot running';
+                    text.textContent = 'Running';
+                    pauseBtn.style.display = '';
+                    resumeBtn.style.display = 'none';
+                }
                 btn.textContent = 'Stop';
                 btn.className = 'btn btn-sm btn-danger';
                 interval.textContent = 'Interval: ' + status.interval_seconds + 's';
                 if (status.next_test_in !== null) next.textContent = 'Next: ' + status.next_test_in + 's';
+                batchInfo.textContent = 'Batch size: ' + (status.batch_size || 20);
+                startCycleProgressPolling();
             } else {
                 dot.className = 'status-dot stopped';
                 text.textContent = 'Stopped';
@@ -533,7 +611,95 @@
                 btn.className = 'btn btn-sm btn-secondary';
                 interval.textContent = '';
                 next.textContent = '';
+                batchInfo.textContent = '';
+                pauseBtn.style.display = 'none';
+                resumeBtn.style.display = 'none';
+                stopCycleProgressPolling();
             }
+        }
+
+        // ===== Live Cycle Progress =====
+        function startCycleProgressPolling() {
+            if (_cycleProgressTimer) return;
+            pollCycleProgress();
+            _cycleProgressTimer = setInterval(pollCycleProgress, 2000);
+        }
+
+        function stopCycleProgressPolling() {
+            if (_cycleProgressTimer) {
+                clearInterval(_cycleProgressTimer);
+                _cycleProgressTimer = null;
+            }
+        }
+
+        async function pollCycleProgress() {
+            var data = await fetchAPI('/api/monitor/cycle-progress');
+            if (!data) return;
+            var container = document.getElementById('cycle-progress-container');
+            if (data.active) {
+                container.style.display = '';
+                var pct = data.ips_total > 0 ? Math.round((data.ips_tested / data.ips_total) * 100) : 0;
+                document.getElementById('cycle-progress-bar').style.width = pct + '%';
+                document.getElementById('cycle-progress-text').textContent =
+                    'Testing ' + data.ips_tested + '/' + data.ips_total + ' IPs (' + pct + '%)';
+                document.getElementById('cycle-progress-elapsed').textContent = data.elapsed_seconds + 's';
+                document.getElementById('cycle-progress-responded').textContent = 'Responded: ' + data.ips_responded;
+                document.getElementById('cycle-progress-failed').textContent = 'Failed: ' + data.ips_failed;
+                document.getElementById('cycle-progress-batch').textContent = 'Batch: ' + data.current_batch + '/' + data.total_batches;
+            } else {
+                container.style.display = 'none';
+                // Load last cycle summary when cycle finishes
+                loadLastCycleSummary();
+            }
+        }
+
+        // ===== Last Cycle Summary =====
+        async function loadLastCycleSummary() {
+            var data = await fetchAPI('/api/monitor/last-cycle');
+            if (!data || !data.timestamp) {
+                document.getElementById('last-cycle-container').style.display = 'none';
+                return;
+            }
+            document.getElementById('last-cycle-container').style.display = '';
+            document.getElementById('lc-duration').textContent = 'Duration: ' + data.duration_seconds + 's';
+            document.getElementById('lc-responded').textContent = 'OK: ' + data.ips_responded + '/' + data.ips_total;
+            document.getElementById('lc-failed').textContent = 'Failed: ' + data.ips_failed;
+            document.getElementById('lc-avg-speed').textContent = 'Avg: ' + data.avg_speed + ' MB/s';
+            document.getElementById('lc-time').textContent = timeAgo(data.timestamp);
+        }
+
+        // ===== Cycle History Log =====
+        async function loadCycleHistory() {
+            var data = await fetchAPI('/api/monitor/cycle-history?limit=20');
+            if (!data || !data.history || data.history.length === 0) {
+                document.getElementById('cycle-history-body').innerHTML =
+                    '<tr><td colspan="8" style="text-align: center; padding: 1rem; color: var(--text-muted);">No cycles yet</td></tr>';
+                return;
+            }
+            document.getElementById('cycle-history-body').innerHTML = data.history.map(function(c) {
+                var failClass = c.ips_failed > 0 ? ' style="color: var(--accent-danger);"' : '';
+                return '<tr>' +
+                    '<td>' + c.cycle_number + '</td>' +
+                    '<td style="font-size: 0.7rem;" title="' + new Date(c.timestamp).toLocaleString() + '">' + timeAgo(c.timestamp) + '</td>' +
+                    '<td>' + c.duration_seconds + 's</td>' +
+                    '<td>' + c.ips_total + '</td>' +
+                    '<td style="color: var(--accent-primary);">' + c.ips_responded + '</td>' +
+                    '<td' + failClass + '>' + c.ips_failed + '</td>' +
+                    '<td>' + c.avg_speed + ' MB/s</td>' +
+                    '<td>' + c.batches + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        // ===== Pause / Resume =====
+        async function pauseMonitor() {
+            var result = await fetchAPI('/api/monitor/pause', { method: 'POST' });
+            if (result) { showToast('Monitor paused', 'success'); loadStats(); }
+        }
+
+        async function resumeMonitor() {
+            var result = await fetchAPI('/api/monitor/resume', { method: 'POST' });
+            if (result) { showToast('Monitor resumed', 'success'); loadStats(); }
         }
 
         // Story #3: Build URL with date filter params
@@ -956,9 +1122,9 @@
             }
         }
 
-        function refreshData() { loadStats(); loadIPs(); loadHourlyChart(); }
+        function refreshData() { loadStats(); loadIPs(); loadHourlyChart(); loadLastCycleSummary(); loadCycleHistory(); }
         setInterval(function() { loadStats(); }, 30000);
-        setInterval(function() { loadIPs(); loadHourlyChart(); }, 120000);
+        setInterval(function() { loadIPs(); loadHourlyChart(); loadCycleHistory(); }, 120000);
         document.addEventListener('DOMContentLoaded', function() { refreshData(); loadCleanupConfig(); });
         document.querySelectorAll('.modal-overlay').forEach(function(modal) { modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); }); });
         document.addEventListener('keydown', function(e) { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(function(m) { m.classList.remove('active'); }); if (e.key === 'r' && document.activeElement.tagName !== 'INPUT') refreshData(); });

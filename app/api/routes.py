@@ -173,6 +173,35 @@ def monitor_status():
     return jsonify(current_app.monitor.get_status())
 
 
+@api_bp.route("/monitor/cycle-progress")
+def monitor_cycle_progress():
+    return jsonify(current_app.monitor.get_cycle_progress())
+
+
+@api_bp.route("/monitor/last-cycle")
+def monitor_last_cycle():
+    summary = current_app.monitor.get_last_cycle_summary()
+    return jsonify(summary or {})
+
+
+@api_bp.route("/monitor/cycle-history")
+def monitor_cycle_history():
+    limit = int(request.args.get("limit", 20))
+    return jsonify({"history": current_app.monitor.get_cycle_history(limit)})
+
+
+@api_bp.route("/monitor/pause", methods=["POST"])
+def pause_monitor():
+    current_app.monitor.pause()
+    return jsonify({"status": "paused"})
+
+
+@api_bp.route("/monitor/resume", methods=["POST"])
+def resume_monitor():
+    current_app.monitor.resume()
+    return jsonify({"status": "resumed"})
+
+
 @api_bp.route("/scan/initial", methods=["POST"])
 def start_initial_scan():
     scanner = current_app.scanner
